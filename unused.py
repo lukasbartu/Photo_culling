@@ -8,8 +8,6 @@ def pred_result(img):
     f = f[0]
     f = f.tolist()
     return f
-
-# TODO - NOT USED YET
 def calculate_image_content(pth,lst,result_pth):
     content_list = []
     for i, img in enumerate(lst):
