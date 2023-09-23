@@ -51,7 +51,7 @@ while True:
     if event == sg.WIN_CLOSED:break
     if event == "-FOLDER-":
         folder = values["-FOLDER-"]
-        _, sim_path, q_path = prepare_paths(folder)
+        _, sim_path, q_path, content_path = prepare_paths(folder,abs_p=True)
         img_list, img_num = prepare_img_list(folder)
     if event == "-CALC_Q":
         if not folder:

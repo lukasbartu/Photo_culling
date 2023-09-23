@@ -52,8 +52,11 @@ class NIMA(nn.Module):
         out = self.classifier(out)
         return out_f,out
 
-def prepare_paths(pth):
-    abs_pth = os.getcwd() + pth  # absolute file of image directory
+def prepare_paths(pth,abs_p):
+    if abs_p:
+        abs_pth = pth
+    else:
+        abs_pth = os.getcwd() + pth  # absolute file of image directory
     folder_name = abs_pth.split("/")[-1]  # name of most nested folder for better naming of resulting files
     sim_path = "image_similarities_" + folder_name + ".json"  # file to save result of precalculating similarities
     q_path = "image_quality_" + folder_name + ".json"  # file to save result of quality evaluation
@@ -240,7 +243,7 @@ sift = cv2.SIFT_create(1000) # SIFT algorithm with number of keypoints
 bf = cv2.BFMatcher() # keypoint matcher
 
 def main(arg_list):
-    abs_pth,sim_path,q_path,c_path = prepare_paths(arg_list.directory)
+    abs_pth,sim_path,q_path,c_path = prepare_paths(arg_list.directory,abs_p=False)
     img_list,img_num = prepare_img_list(abs_pth)
 
     if arg_list.calculate_quality:
