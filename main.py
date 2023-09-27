@@ -132,7 +132,7 @@ def calculate_similarities(pth,lst,result_pth,num,nbrs):
             keypoints_j, descriptors_j = features[j]
             matches = calculate_matches(descriptors_i, descriptors_j)
             score = calculate_score(len(matches), len(keypoints_i), len(keypoints_j))
-            sim_list+=[{"first_id": i,
+            sim_list+=[{"id": i,
                         "first_img": lst[i],
                         "second_img": lst[j],
                         "similarity_score": score}]
@@ -162,8 +162,7 @@ def calculate_qualities(pth, lst, result_pth, model,device):
     ])
 
     mean, std = 0.0, 0.0
-    i = 0
-    for img in lst:
+    for i ,img in enumerate(lst):
         im = Image.open(os.path.join(pth, str(img))).convert('RGB')
         imt = test_transform(im)
         imt = imt.unsqueeze(dim=0)
@@ -176,37 +175,77 @@ def calculate_qualities(pth, lst, result_pth, model,device):
         for k, e in enumerate(out_class, 1):
             std += e * (k - mean) ** 2
         std = std ** 0.5
-        q_list += [{"first_img": lst[i],
+        q_list += [{"id": i,
+                    "img": lst[i],
                     "quality_mean": float(mean),
                     "quality_std": float(std)}]
-        i += 1
         mean, std = 0.0, 0.0
     with open(os.path.join(os.getcwd(), result_pth), "w") as write_file:
         json.dump(q_list, write_file, indent=2)
 
-# TODO - implement actual selection, for now selects top mean_quality photos without similar photos occurring
-def select_summary(sim_pth,q_pth,percent,num,q_t,dir_pth):
-    select_num = int(num*(percent/100))
-    with open(sim_pth) as json_file:
-        sim_data = json.load(json_file)
+def pred_result(img):
+    t = preprocessing.image.img_to_array(img)
+    t = np.expand_dims(t, axis=0)
+    t = preprocess_input(t)
+    f = class_model.predict(t)
+    f = f[0]
+    f = f.tolist()
+    return f
+
+def calculate_content(pth,lst,result_pth):
+    content_list = []
+    for i, img in enumerate(lst):
+        temp = preprocessing.image.load_img(os.path.join(pth,img),color_mode='rgb', target_size=(224, 224))
+        res = pred_result(temp)
+        content_list+=[{"id": i,
+                        "img": lst[i],
+                        "content": res}]
+    with open(os.path.join(os.getcwd(), result_pth), "w") as write_file:
+        json.dump(content_list, write_file, indent=2)
+
+def get_content_score(x):
+    content_weights = np.atleast_2d([5] * 1000)  # TODO - implement weights that are learnable
+    return  float(np.dot(content_weights, x))
+
+def calculate_img_score(q_pth,c_pth):
+    image_overall_scores = []
     with open(q_pth) as json_file:
         q_data = json.load(json_file)
-    q_sorted_lst = sorted(q_data,key=operator.itemgetter("quality_mean"))
-    q_sorted_lst.reverse()
+    with open(c_pth) as json_file:
+        c_data = json.load(json_file)
+    c_list = sorted(c_data,key=operator.itemgetter("id"))
+    for i, temp in enumerate(c_list):
+        content = np.array(temp["content"])
+        content_score = get_content_score(content)
+        image_overall_scores+=[{"img": temp["img"],
+                                "score": content_score}]
+    q_list = sorted(q_data,key=operator.itemgetter("id"))
+    for i, temp in enumerate(q_list):
+        image_overall_scores[i].update({"score": image_overall_scores[i]["score"] + temp["quality_mean"] })
+    return sorted(image_overall_scores,key=operator.itemgetter("score"),reverse=True)
+
+# TODO - update simil
+def select_summary(sim_pth,q_pth,c_pth,percent,num,q_t,dir_pth):
+    select_num = int(num*(percent/100))
+    image_scores = calculate_img_score(q_pth, c_pth)
     q_top_list = []
-    i = 0
-    for temp1 in q_sorted_lst:
-        if i >= select_num:
+    selected = 0
+    ## TODO finish similarity score rating
+    with open(sim_pth) as json_file:
+        sim_data = json.load(json_file)
+    for i,temp1 in enumerate(image_scores):
+        if selected >= select_num:
             break
-        img = temp1["first_img"]
         in_top_list = False
+        img = temp1["img"]
         for temp2 in sim_data:
             if img == temp2["first_img"] and temp2["second_img"] in q_top_list and temp2["similarity_score"] > q_t:
                 in_top_list = True
                 break
         if not in_top_list:
             q_top_list.append(img)
-            i+=1
+            selected+=1
+    ## TODO end
     for t in q_top_list:
         webbrowser.open(os.path.join(dir_pth,t))
     return q_top_list
@@ -229,14 +268,16 @@ def simple_calculate_s(abs_pth,img_list,sim_path,img_num,num_nbrs):
     toc = time.perf_counter()
     print(f"Process took: {toc - tic:0.2f} s")
 
-def simple_create_sum(sim_path,q_path,percent,img_num,q_t,abs_pth):
+def simple_create_sum(sim_path,q_path,c_path,percent,img_num,q_t,abs_pth):
     tic = time.perf_counter()
     print("Selecting summary of photos")
-    summary = select_summary(sim_pth=sim_path, q_pth=q_path, percent=percent, num=img_num, q_t=q_t,
+    summary = select_summary(sim_pth=sim_path, q_pth=q_path, c_pth=c_path, percent=percent, num=img_num, q_t=q_t,
                    dir_pth=abs_pth)
     print("Summary:",summary)
     toc = time.perf_counter()
     print(f"Process took: {toc - tic:0.2f} s")
+
+
 
 class_model = VGG16(weights='imagenet') # TODO - find more suitable CNN with more classes
 sift = cv2.SIFT_create(1000) # SIFT algorithm with number of keypoints
@@ -251,7 +292,11 @@ def main(arg_list):
     if arg_list.calculate_similarity:
         simple_calculate_s(abs_pth, img_list, sim_path, img_num, arg_list.number_of_neighbors)
     if arg_list.select_photos:
-        simple_create_sum(sim_path, q_path, arg_list.percentage, img_num, arg_list.similarity_threshold, abs_pth)
+        print("Calculate content")
+        calculate_content(abs_pth, img_list, c_path)
+        print("Content Calculated")
+        simple_create_sum(sim_path, q_path, c_path, arg_list.percentage, img_num, arg_list.similarity_threshold, abs_pth)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate a subset of photographs from current directory. Considers both technical and aesthetic quality as well as similarity between photographs.",
