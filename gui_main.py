@@ -1,7 +1,8 @@
 __author__ = 'Lukáš Bartůněk'
 
 import PySimpleGUI as sg
-from main import select_summary,calculate_qualities,calculate_similarities,prepare_model,prepare_paths,prepare_img_list
+from main import (select_summary,calculate_qualities,calculate_similarities,
+                  prepare_model,prepare_paths,prepare_img_list,calculate_content)
 import time
 
 layout = [
@@ -43,6 +44,7 @@ folder = []
 img_list = []
 sim_path = None
 q_path = None
+c_path = None
 img_num = None
 # Create an event loop
 while True:
@@ -51,7 +53,7 @@ while True:
     if event == sg.WIN_CLOSED:break
     if event == "-FOLDER-":
         folder = values["-FOLDER-"]
-        _, sim_path, q_path, content_path = prepare_paths(folder,abs_p=True)
+        _, sim_path, q_path, c_path = prepare_paths(folder,abs_p=True)
         img_list, img_num = prepare_img_list(folder)
     if event == "-CALC_Q":
         if not folder:
@@ -90,9 +92,13 @@ while True:
             percent = values["-PERCENT"]
             q_t = values["-Q_T"]
             tic = time.perf_counter()
-            print("Selecting summary of photos...",end="   ")
+            print("Creating content description...", end="   ")
             window.Refresh() if window else None
-            summary = select_summary(sim_pth=sim_path, q_pth=q_path, percent=percent, num=img_num, q_t=q_t,dir_pth=folder)
+            calculate_content(folder,img_list,c_path)
+            print("Content calculated")
+            print("Selecting summary of photos...", end="   ")
+            window.Refresh() if window else None
+            summary = select_summary(sim_pth=sim_path, q_pth=q_path, c_pth=c_path, percent=percent, num=img_num, q_t=q_t,dir_pth=folder)
             print("Similarities calculated")
             window.Refresh() if window else None
             toc = time.perf_counter()
