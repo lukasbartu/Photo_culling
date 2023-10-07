@@ -1,8 +1,11 @@
 __author__ = 'Lukáš Bartůněk'
 
 import PySimpleGUI as sg
-from main import (select_summary,calculate_qualities,calculate_similarities,
-                  prepare_model,prepare_paths,prepare_img_list,calculate_content)
+from quality_assessment import prepare_model, calculate_qualities
+from similarity_assessment import calculate_similarities
+from content_assessment import calculate_content
+from summary_creation import select_summary
+from utils import prepare_paths,prepare_img_list
 import time
 
 layout = [
@@ -15,7 +18,7 @@ layout = [
     ],[
         sg.Text("Similarity threshold"),
         sg.Push(),
-        sg.Slider((0,100), orientation='h', s=(10,15),default_value=10,tooltip="Recommended: 10",key="-Q_T"),
+        sg.Slider((0,100), orientation='h', s=(10,15),default_value=10,tooltip="Recommended: 10",key="-S_T"),
     ],[
         sg.Text("Number of neighbors"),
         sg.Push(),
@@ -25,12 +28,18 @@ layout = [
         sg.Push(),
         sg.Slider((1,100), orientation='h', s=(10,15),default_value=50, tooltip="Recommended: 50%"),
     ],[
+        sg.Text("Importance of image content"),
+        sg.Push(),
+        sg.Slider((1, 100), orientation='h', s=(10, 15), default_value=50, tooltip="Recommended: 50%", key="-C_Q_RATIO"),
+    ],[
         sg.Text("Percentage of all images in selection"),
         sg.Push(),
         sg.Slider((1,100), orientation='h', s=(10,15),default_value=10, tooltip="Recommended: 10%",key="-PERCENT"),
     ],[
         sg.Button("Calculate quality",key="-CALC_Q"),
         sg.Button("Calculate similarity",key="-CALC_S"),
+        sg.Button("Calculate content",key= "-CALC_C"),
+    ],[
         sg.Button("Generate summary",key="-SUMM")
     ],[
         [sg.Output(size=(60,4))],
@@ -85,21 +94,31 @@ while True:
             window.Refresh() if window else None
             toc = time.perf_counter()
             print(f"Process took: {toc - tic:0.2f} s")
+    if event == "-CALC_C":
+        if not folder:
+            sg.popup("No folder selected")
+        else:
+            tic = time.perf_counter()
+            print("Creating content description...", end="   ")
+            window.Refresh() if window else None
+            calculate_content(pth=folder,lst=img_list,result_pth=c_path)
+            print("Content Calculated")
+            window.Refresh() if window else None
+            toc = time.perf_counter()
+            print(f"Process took: {toc - tic:0.2f} s")
     if event == "-SUMM":
         if not folder:
             sg.popup("No folder selected")
         else:
             percent = values["-PERCENT"]
-            q_t = values["-Q_T"]
+            s_t = values["-S_T"]
+            c_q_ratio = values["C_Q_RATIO"]
             tic = time.perf_counter()
-            print("Creating content description...", end="   ")
-            window.Refresh() if window else None
-            calculate_content(folder,img_list,c_path)
-            print("Content calculated")
             print("Selecting summary of photos...", end="   ")
             window.Refresh() if window else None
-            summary = select_summary(sim_pth=sim_path, q_pth=q_path, c_pth=c_path, percent=percent, num=img_num, q_t=q_t,dir_pth=folder)
-            print("Similarities calculated")
+            summary = select_summary(sim_pth=sim_path, q_pth=q_path, c_pth=c_path, percent=percent, num=img_num,
+                                     s_t=s_t,dir_pth=folder, c_q_r=c_q_ratio)
+            print("Summary calculated")
             window.Refresh() if window else None
             toc = time.perf_counter()
             print(f"Process took: {toc - tic:0.2f} s")
