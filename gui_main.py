@@ -10,11 +10,11 @@ import time
 
 layout = [
     [
-        sg.Text("Set program parameters"),
-    ],[
+        sg.Push(),
         sg.Text("Image Folder"),
         sg.In(size=(25, 1), enable_events=True, key="-FOLDER-"),
         sg.FolderBrowse(),
+        sg.Push()
     ],[
         sg.Text("Similarity threshold"),
         sg.Push(),
@@ -37,10 +37,14 @@ layout = [
         sg.Slider((1,100), orientation='h', s=(10,15),default_value=10, tooltip="Recommended: 10%",key="-PERCENT"),
     ],[
         sg.Button("Calculate quality",key="-CALC_Q"),
+        sg.Push(),
         sg.Button("Calculate similarity",key="-CALC_S"),
+        sg.Push(),
         sg.Button("Calculate content",key= "-CALC_C"),
     ],[
-        sg.Button("Generate summary",key="-SUMM")
+        sg.Push(),
+        sg.Button("Generate summary",key="-SUMM"),
+        sg.Push()
     ],[
         [sg.Output(size=(60,4))],
     ]
@@ -55,6 +59,8 @@ sim_path = None
 q_path = None
 c_path = None
 img_num = None
+percent = None
+c_q_ratio = None
 # Create an event loop
 while True:
     event, values = window.read()
@@ -112,7 +118,7 @@ while True:
         else:
             percent = values["-PERCENT"]
             s_t = values["-S_T"]
-            c_q_ratio = values["C_Q_RATIO"]
+            c_q_ratio = values["-C_Q_RATIO"]
             tic = time.perf_counter()
             print("Selecting summary of photos...", end="   ")
             window.Refresh() if window else None
