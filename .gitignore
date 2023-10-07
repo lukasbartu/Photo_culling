@@ -1,5 +1,3 @@
 images/Ples/
 .idea
-image_content*
-image_similarities*
-image_quality*
+*.json
