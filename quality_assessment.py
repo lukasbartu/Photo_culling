@@ -38,9 +38,10 @@ def prepare_model(model_pth):
 
 
 # TODO - separate technical and aesthetics quality assessment
-def calculate_qualities(pth, lst, result_pth, model,device):
+def calculate_qualities(pth, lst, result_pth, model_pth):
     if os.path.exists(result_pth):
         return
+    model, device = prepare_model(model_pth)
     q_list = [] # list to store results
     test_transform = transforms.Compose([
         transforms.Resize(256),

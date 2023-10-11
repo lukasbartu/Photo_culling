@@ -10,7 +10,7 @@ __author__ = 'Lukáš Bartůněk'
 # DONE - Familiarize yourself with existing tools and approaches in this domain
 #           and suggest a suitable architecture for the photo selection tool.
 # DONE - Test existing approaches for evaluating image quality, image similarity and  image content.
-# TODO - Evaluate several methods for combining extracted image information for photo selection.
+# DONE - Evaluate several methods for combining extracted image information for photo selection.
 # DONE - Implement an easy-to-use software tool for photo  selection, allowing the user to set basic parameters of the process.
 # TODO - Experimentally evaluate the performance of the developed software by comparing it with other existing tools,
 #           by comparing it with human performance, or by evaluating user satisfaction.
@@ -39,10 +39,7 @@ def main(arg_list):
 
     if arg_list.calculate_quality:
         tic = time.perf_counter()
-        print("Preparing model")
-        mdl, dvc = prepare_model(model_pth=model_path)
-        print("Successfully loaded model")
-        calculate_qualities(pth=abs_pth, lst=img_list, result_pth=q_path, model=mdl, device=dvc)
+        calculate_qualities(pth=abs_pth, lst=img_list, result_pth=q_path, model_pth=model_path)
         print("Quality Calculated")
         toc = time.perf_counter()
         print(f"Process took: {toc - tic:0.2f} s")
