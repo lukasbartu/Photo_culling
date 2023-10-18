@@ -86,7 +86,8 @@ while True:
             window.Refresh() if window else None
             print("Calculating similarities...", end="   ")
             window.Refresh() if window else None
-            calculate_similarities(pth=folder, lst=img_list, result_pth=sim_path, num=img_num, nbrs=nbrs,content_pth=c_path)
+            calculate_similarities(pth=folder, lst=img_list, result_pth=sim_path, num=img_num,
+                                   nbrs=nbrs,content_pth=c_path)
             print("Similarities calculated")
             window.Refresh() if window else None
 

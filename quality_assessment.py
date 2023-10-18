@@ -38,7 +38,6 @@ def prepare_model(model_pth):
     return model, device
 
 
-# TODO - separate technical and aesthetics quality assessment
 def calculate_qualities(pth, lst, result_pth, model_pth):
     if os.path.exists(result_pth):
         return
@@ -59,6 +58,10 @@ def calculate_qualities(pth, lst, result_pth, model_pth):
 
         image.thumbnail((224, 224)) # transform for technical quality
         score_t = imquality.brisque.score(image)
+        if score_t < 0:
+            score_t = 0
+        elif score_t > 100:
+            score_t = 100
 
         im_a = im_a.unsqueeze(dim=0)
         im_a = im_a.to(device)
