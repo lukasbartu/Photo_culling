@@ -45,8 +45,8 @@ def main(arg_list):
         print(f"Process took: {toc - tic:0.2f} s")
     if arg_list.calculate_similarity:
         tic = time.perf_counter()
-        print("Images have been loaded")
-        calculate_similarities(pth=abs_pth, lst=img_list, result_pth=sim_path, num=img_num, nbrs=nbrs)
+        print("Calculate similarities")
+        calculate_similarities(pth=abs_pth, lst=img_list, result_pth=sim_path, num=img_num, nbrs=nbrs,content_pth=c_path)
         print("Similarities calculated")
         toc = time.perf_counter()
         print(f"Process took: {toc - tic:0.2f} s")
@@ -58,7 +58,7 @@ def main(arg_list):
         tic = time.perf_counter()
         print("Selecting summary of photos")
         summary = select_summary(sim_pth=sim_path, q_pth=q_path, c_pth=c_path, percent=percent, num=img_num, s_t=s_t,
-                                 dir_pth=abs_pth, c_q_r=c_q_ratio)
+                                 dir_pth=abs_pth, c_q_r=c_q_ratio, t_a_r=t_a_ratio)
         print("Summary:", summary)
         toc = time.perf_counter()
         print(f"Process took: {toc - tic:0.2f} s")
@@ -88,7 +88,7 @@ if __name__ == '__main__':
     parser.add_argument('-s_t','--similarity_threshold',
                         help='threshold on SIFT similarity to consider images as similar to be pruned.',type=int,default=10)
     parser.add_argument('-model','--model_path',
-                        help='path to model for quality assessment',default= "model.pth" )
+                        help='path to model for quality assessment',default= "model.pth")
     parser.add_argument( '-dir','--directory',
                          help='directory containing photographs',default= "/images/Ples/fotokoutek" )
     args=parser.parse_args()

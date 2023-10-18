@@ -1,6 +1,7 @@
 __author__ = 'Lukáš Bartůněk'
 
 import os
+import natsort
 
 def prepare_paths(pth,abs_p):
     if abs_p:
@@ -21,5 +22,5 @@ def prepare_img_list(pth):
             if path.name.endswith(".jpg"):
                 img_list += [path.name]
     img_num = len(img_list)
-    img_list.sort()
+    img_list = natsort.natsorted(img_list)
     return img_list,img_num

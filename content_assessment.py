@@ -6,7 +6,7 @@ from keras import preprocessing
 import numpy as np
 from keras.applications.vgg16 import preprocess_input,decode_predictions,VGG16
 
-class_model = VGG16(weights='imagenet') # TODO - find more suitable CNN with more classes
+class_model = VGG16(weights='imagenet')
 
 def pred_result(img):
     t = preprocessing.image.img_to_array(img)
@@ -14,7 +14,7 @@ def pred_result(img):
     t = preprocess_input(t)
     f = class_model.predict(t)
     f = f.tolist()
-    return f
+    return f[0]
 
 def calculate_content(pth,lst,result_pth):
     if os.path.exists(result_pth):

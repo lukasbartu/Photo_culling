@@ -16,17 +16,25 @@ layout = [
         sg.FolderBrowse(),
         sg.Push()
     ],[
+        sg.Text("Number of neighbours"),
+        sg.Push(),
+        sg.Slider((0,50), orientation='h', s=(10,15),default_value=10, resolution=5, tooltip="Recommended: 10",key="-NBRS"),
+    ],[
+        sg.Text("Similarity threshold"),
+        sg.Push(),
+        sg.Slider((0, 50), orientation='h', s=(10, 15), default_value=10,resolution=10, tooltip="Recommended: 10",key="-S_T"),
+    ],[
         sg.Text("Technical quality weight of summary selection"),
         sg.Push(),
-        sg.Slider((1,100), orientation='h', s=(10,15),default_value=50, tooltip="Recommended: 50%"),
+        sg.Slider((0,100), orientation='h', s=(10,15),default_value=50,resolution=5, tooltip="Recommended: 50%",key="-T_A_RATIO")
     ],[
         sg.Text("Importance of image content"),
         sg.Push(),
-        sg.Slider((1, 100), orientation='h', s=(10, 15), default_value=50, tooltip="Recommended: 50%", key="-C_Q_RATIO"),
+        sg.Slider((0, 100), orientation='h', s=(10, 15), default_value=50,resolution=5, tooltip="Recommended: 50%", key="-C_Q_RATIO"),
     ],[
         sg.Text("Percentage of all images in selection"),
         sg.Push(),
-        sg.Slider((1,100), orientation='h', s=(10,15),default_value=10, tooltip="Recommended: 10%",key="-PERCENT"),
+        sg.Slider((0,100), orientation='h', s=(10,15),default_value=10,resolution=5, tooltip="Recommended: 10%",key="-PERCENT"),
     ],[
         sg.Push(),
         sg.Button("Generate summary",key="-SUMM"),
@@ -68,27 +76,28 @@ while True:
             print("Quality calculated")
             window.Refresh() if window else None
 
-            nbrs = 10
-            window.Refresh() if window else None
-            print("Calculating similarities...", end="   ")
-            window.Refresh() if window else None
-            calculate_similarities(pth=folder, lst=img_list, result_pth=sim_path, num=img_num, nbrs=nbrs)
-            print("Similarities calculated")
-            window.Refresh() if window else None
-
             print("Creating content description...", end="   ")
             window.Refresh() if window else None
             calculate_content(pth=folder, lst=img_list, result_pth=c_path)
             print("Content description created")
             window.Refresh() if window else None
 
+            nbrs = values["-NBRS"]
+            window.Refresh() if window else None
+            print("Calculating similarities...", end="   ")
+            window.Refresh() if window else None
+            calculate_similarities(pth=folder, lst=img_list, result_pth=sim_path, num=img_num, nbrs=nbrs,content_pth=c_path)
+            print("Similarities calculated")
+            window.Refresh() if window else None
+
             percent = values["-PERCENT"]
-            s_t = 10
+            s_t = values["-S_T"]
             c_q_ratio = values["-C_Q_RATIO"]
+            t_a_ratio = values["-T_A_RATIO"]
             print("Selecting summary of photos...", end="   ")
             window.Refresh() if window else None
             summary = select_summary(sim_pth=sim_path, q_pth=q_path, c_pth=c_path, percent=percent, num=img_num,
-                                     s_t=s_t,dir_pth=folder, c_q_r=c_q_ratio)
+                                     s_t=s_t,dir_pth=folder, c_q_r=c_q_ratio, t_a_r=t_a_ratio)
             print("Summary calculated")
             window.Refresh() if window else None
             toc = time.perf_counter()

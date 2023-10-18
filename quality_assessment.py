@@ -7,6 +7,7 @@ import torchvision.transforms as transforms
 import torch
 import torch.nn as nn
 from PIL import Image
+import imquality.brisque
 
 class NIMA(nn.Module):
 
@@ -53,22 +54,23 @@ def calculate_qualities(pth, lst, result_pth, model_pth):
 
     mean, std = 0.0, 0.0
     for i ,img in enumerate(lst):
-        im = Image.open(os.path.join(pth, str(img))).convert('RGB')
-        imt = test_transform(im)
-        imt = imt.unsqueeze(dim=0)
-        imt = imt.to(device)
+        image = Image.open(os.path.join(pth, str(img))).convert('RGB')
+        im_a = test_transform(image) # transform for aesthetic quality
+
+        image.thumbnail((224, 224)) # transform for technical quality
+        score_t = imquality.brisque.score(image)
+
+        im_a = im_a.unsqueeze(dim=0)
+        im_a = im_a.to(device)
         with torch.no_grad():
-            out_f, out_class = model(imt)
+            out_f, out_class = model(im_a)
         out_class = out_class.view(10, 1)
         for j, e in enumerate(out_class, 1):
             mean += j * e
-        for k, e in enumerate(out_class, 1):
-            std += e * (k - mean) ** 2
-        std = std ** 0.5
         q_list += [{"id": i,
                     "img": lst[i],
-                    "quality_mean": float(mean),
-                    "quality_std": float(std)}]
+                    "aesthetic_quality": float(mean),
+                    "technical_quality": (100 - score_t)/10}]
         mean, std = 0.0, 0.0
     with open(os.path.join(os.getcwd(), result_pth), "w") as write_file:
         json.dump(q_list, write_file, indent=2)
