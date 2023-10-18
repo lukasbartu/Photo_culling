@@ -21,11 +21,14 @@ __author__ = 'Lukáš Bartůněk'
 
 import time
 import argparse
-from quality_assessment import prepare_model, calculate_qualities
+import webbrowser
+import os
+from quality_assessment import calculate_qualities
 from similarity_assessment import calculate_similarities
 from content_assessment import calculate_content
 from summary_creation import select_summary
 from utils import prepare_paths,prepare_img_list
+
 
 def main(arg_list):
     abs_pth,sim_path,q_path,c_path = prepare_paths(arg_list.directory,abs_p=False)
@@ -43,6 +46,13 @@ def main(arg_list):
         print("Quality Calculated")
         toc = time.perf_counter()
         print(f"Process took: {toc - tic:0.2f} s")
+    if arg_list.calculate_content:
+        tic = time.perf_counter()
+        print("Calculate content")
+        calculate_content(abs_pth, img_list, c_path)
+        print("Content Calculated")
+        toc = time.perf_counter()
+        print(f"Process took: {toc - tic:0.2f} s")
     if arg_list.calculate_similarity:
         tic = time.perf_counter()
         print("Calculate similarities")
@@ -50,18 +60,16 @@ def main(arg_list):
         print("Similarities calculated")
         toc = time.perf_counter()
         print(f"Process took: {toc - tic:0.2f} s")
-    if arg_list.calculate_content:
-        print("Calculate content")
-        calculate_content(abs_pth, img_list, c_path)
-        print("Content Calculated")
     if arg_list.select_photos:
         tic = time.perf_counter()
         print("Selecting summary of photos")
         summary = select_summary(sim_pth=sim_path, q_pth=q_path, c_pth=c_path, percent=percent, num=img_num, s_t=s_t,
-                                 dir_pth=abs_pth, c_q_r=c_q_ratio, t_a_r=t_a_ratio)
+                                 c_q_r=c_q_ratio, t_a_r=t_a_ratio)
         print("Summary:", summary)
         toc = time.perf_counter()
         print(f"Process took: {toc - tic:0.2f} s")
+        for t in summary:
+            webbrowser.open(os.path.join(abs_pth, t))
 
 
 if __name__ == '__main__':

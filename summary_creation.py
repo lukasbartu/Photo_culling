@@ -1,7 +1,6 @@
 __author__ = 'Lukáš Bartůněk'
 
-import json, os
-import webbrowser
+import json
 import operator
 import numpy as np
 from content_assessment import get_content_score
@@ -39,7 +38,7 @@ def update_scores(sim_data,image_scores,q_t,img):
             break
     return image_scores
 
-def select_summary(sim_pth,q_pth,c_pth,percent,num,s_t,dir_pth,c_q_r,t_a_r):
+def select_summary(sim_pth,q_pth,c_pth,percent,num,s_t,c_q_r,t_a_r):
     select_num = int(num*(percent/100))
     image_scores = calculate_img_score(q_pth, c_pth, c_q_r, t_a_r)
     top_list = []
@@ -56,6 +55,4 @@ def select_summary(sim_pth,q_pth,c_pth,percent,num,s_t,dir_pth,c_q_r,t_a_r):
         image_scores[added_id].update({"score": 0})
         top_list.append(added_img)
         selected +=1
-    for t in top_list:
-        webbrowser.open(os.path.join(dir_pth,t))
     return top_list
