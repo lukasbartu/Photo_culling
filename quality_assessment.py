@@ -7,7 +7,9 @@ import torchvision.transforms as transforms
 import torch
 import torch.nn as nn
 from PIL import Image
-import imquality.brisque
+from brisque import BRISQUE
+import skimage
+from skimage import io
 
 class NIMA(nn.Module):
 
@@ -37,10 +39,10 @@ def prepare_model(model_pth):
     model.eval()
     return model, device
 
-
 def calculate_qualities(pth, lst, result_pth, model_pth):
     if os.path.exists(result_pth):
         return
+    obj = BRISQUE(url=False)
     model, device = prepare_model(model_pth)
     q_list = [] # list to store results
     test_transform = transforms.Compose([
@@ -51,13 +53,15 @@ def calculate_qualities(pth, lst, result_pth, model_pth):
                              std=[0.229, 0.224, 0.225])
     ])
 
-    mean, std = 0.0, 0.0
+    score_a = 0
     for i ,img in enumerate(lst):
         image = Image.open(os.path.join(pth, str(img))).convert('RGB')
         im_a = test_transform(image) # transform for aesthetic quality
 
-        image.thumbnail((224, 224)) # transform for technical quality
-        score_t = imquality.brisque.score(image)
+        im_tensor = torch.tensor(io.imread(os.path.join(pth, img))) / 255.
+        im_t = skimage.transform.resize_local_mean(im_tensor, output_shape=[448, 448]) # transform for technical quality
+        score_t = obj.score(im_t)
+
         if score_t < 0:
             score_t = 0
         elif score_t > 100:
@@ -69,11 +73,11 @@ def calculate_qualities(pth, lst, result_pth, model_pth):
             out_f, out_class = model(im_a)
         out_class = out_class.view(10, 1)
         for j, e in enumerate(out_class, 1):
-            mean += j * e
+            score_a += j * e
         q_list += [{"id": i,
                     "img": lst[i],
-                    "aesthetic_quality": float(mean),
-                    "technical_quality": (100 - score_t)/10}]
-        mean, std = 0.0, 0.0
+                    "aesthetic_quality": float(score_a)*10,
+                    "technical_quality": (100 - score_t)}]
+        score_a = 0
     with open(os.path.join(os.getcwd(), result_pth), "w") as write_file:
         json.dump(q_list, write_file, indent=2)

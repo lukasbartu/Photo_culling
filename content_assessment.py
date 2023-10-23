@@ -4,7 +4,7 @@ import os,json
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 from keras import preprocessing
 import numpy as np
-from keras.applications.vgg16 import preprocess_input,decode_predictions,VGG16
+from keras.applications.vgg16 import preprocess_input,VGG16
 
 class_model = VGG16(weights='imagenet')
 
@@ -28,7 +28,3 @@ def calculate_content(pth,lst,result_pth):
                         "content": res}]
     with open(os.path.join(os.getcwd(), result_pth), "w") as write_file:
         json.dump(content_list, write_file, indent=2)
-
-def get_content_score(x):
-    content_weights = np.atleast_2d([5] * 1000)  # TODO - implement weights that are learnable
-    return  float(np.dot(content_weights, x.T))

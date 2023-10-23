@@ -2,6 +2,7 @@ __author__ = 'Lukáš Bartůněk'
 
 import cv2,os,json,operator
 import numpy as np
+from scipy.spatial import distance
 
 sift = cv2.SIFT_create(1000) # SIFT algorithm with number of keypoints
 bf = cv2.BFMatcher() # keypoint matcher
@@ -49,9 +50,9 @@ def calculate_matches(des1, des2):
 def calculate_score(matches,keypoint1,keypoint2):
     return 100 * (matches/min(keypoint1,keypoint2))
 
-def calculate_similarities(pth,lst,result_pth,num,nbrs,content_pth):
+def calculate_similarities(pth,lst,result_pth,num,nbrs,content_pth,recalc=False):
     max_score = 0
-    if os.path.exists(result_pth):
+    if os.path.exists(result_pth) and not recalc:
         return 0
     if not os.path.exists(content_pth):
         print("Error - No content file found")
@@ -73,7 +74,11 @@ def calculate_similarities(pth,lst,result_pth,num,nbrs,content_pth):
             keypoints_j, descriptors_j = features[j]
             matches = calculate_matches(descriptors_i, descriptors_j)
             f_sim_score = calculate_score(len(matches), len(keypoints_i), len(keypoints_j))
-            c_sim_score = np.linalg.norm(np.array(c_list[i]["content"]) - np.array(c_list[j]["content"]))
+            c_sim_score = (1 - distance.cdist([c_list[i]["content"]], [c_list[j]["content"]], 'cosine')[0][0])*15
+            if c_sim_score <0:
+                c_sim_score = 0
+            elif c_sim_score >100:
+                c_sim_score = 100
             if max_score<c_sim_score:
                 max_score = c_sim_score
             sim_list+=[{"first_id": i,
@@ -81,6 +86,6 @@ def calculate_similarities(pth,lst,result_pth,num,nbrs,content_pth):
                         "first_img": lst[i],
                         "second_img": lst[j],
                         "feature_similarity_score": f_sim_score,
-                        "content_similarity_score": c_sim_score*100}]
+                        "content_similarity_score": c_sim_score}]
     with open(os.path.join(os.getcwd(), result_pth), "w") as write_file:
         json.dump(sim_list, write_file, indent=2)

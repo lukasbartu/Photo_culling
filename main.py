@@ -33,12 +33,13 @@ from utils import prepare_paths,prepare_img_list
 def main(arg_list):
     abs_pth,sim_path,q_path,c_path = prepare_paths(arg_list.directory,abs_p=False)
     img_list,img_num = prepare_img_list(abs_pth)
-    c_q_ratio = arg_list.content_weight/100
+    selection = arg_list.size_based_selection
     t_a_ratio = arg_list.technical_weight/100
     percent = arg_list.percentage
     s_t = arg_list.similarity_threshold
     nbrs = arg_list.number_of_neighbours
     model_path = arg_list.model_path
+    q_t = arg_list.quality_threshold
 
     if arg_list.calculate_quality:
         tic = time.perf_counter()
@@ -64,8 +65,8 @@ def main(arg_list):
     if arg_list.select_photos:
         tic = time.perf_counter()
         print("Selecting summary of photos")
-        summary = select_summary(sim_pth=sim_path, q_pth=q_path, c_pth=c_path, percent=percent, num=img_num, s_t=s_t,
-                                 c_q_r=c_q_ratio, t_a_r=t_a_ratio)
+        summary = select_summary(sim_pth=sim_path, q_pth=q_path, percent=percent, num=img_num, s_t=s_t, t_a_r=t_a_ratio,
+                                 selection=selection,q_cutoff=q_t)
         print("Summary:", summary)
         toc = time.perf_counter()
         print(f"Process took: {toc - tic:0.2f} s")
@@ -89,13 +90,14 @@ if __name__ == '__main__':
     parser.add_argument('-t_weight','--technical_weight',
                         help='how much weight (0-100) to give to the technical quality. The remainder is aesthetic quality',
                         type=int,default=50)
-    parser.add_argument('-c_weight', '--content_weight',
-                        help='how much weight (0-100) to give to the quality. The remainder is user preference score',
-                        type=int, default=50)
     parser.add_argument('-p','--percentage',
                         help='how many percent (0-100) of the original images to select in the first round.',type=int,default=10)
     parser.add_argument('-s_t','--similarity_threshold',
-                        help='threshold on SIFT similarity to consider images as similar to be pruned.',type=int,default=10)
+                        help='threshold on SIFT similarity to consider images as similar to be pruned',type=int,default=10)
+    parser.add_argument('-q_t', '--quality_threshold',
+                        help='threshold of quality that will be included in the summary',type=int,default=80)
+    parser.add_argument('-size_based','--size_based_selection',
+                        help='select based on output size',type=bool ,default=True)
     parser.add_argument('-model','--model_path',
                         help='path to model for quality assessment',default= "model.pth")
     parser.add_argument( '-dir','--directory',
