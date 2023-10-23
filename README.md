@@ -13,5 +13,16 @@ In future we will be working on creating software where user doesn't have to spe
 ## Possible future features
 Adding the ability to read and write image metadata for easier integration with standard tools.
 
-## Authors and acknowledgment
+## Authors
 Authored by Lukáš Bartůněk under supervision of Professor Jan Kybic
+
+## Acknowledgment
+SIFT similarity is edited code taken from https://github.com/adumrewal/SIFTImageSimilarity/blob/master/SIFTSimilarityInteractive.ipynb.
+
+NIMA image quality is edited code taken from https://github.com/yunxiaoshi/Neural-IMage-Assessment.
+
+Technical quality is implemented using library brisque (https://pypi.org/project/brisque/)
+
+Graphical user interface is created using demos and examples from library PySimpleGUI (https://www.pysimplegui.org/en/latest/)
+
+
