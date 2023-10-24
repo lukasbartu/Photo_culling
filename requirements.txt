@@ -1,0 +1,11 @@
+brisque~=0.0.15
+keras~=2.8.0
+natsort~=8.4.0
+numpy~=1.23.1
+Pillow~=10.0.1
+PySimpleGUI~=4.60.5
+scipy~=1.9.3
+torch~=1.12.1
+torchvision~=0.13.1
+scikit-image~=0.21.0
+opencv-python-headless~=4.6.0.66

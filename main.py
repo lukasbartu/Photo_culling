@@ -101,6 +101,6 @@ if __name__ == '__main__':
     parser.add_argument('-model','--model_path',
                         help='path to model for quality assessment',default= "model.pth")
     parser.add_argument( '-dir','--directory',
-                         help='directory containing photographs',default= "/images/Ples/fotokoutek" )
+                         help='directory containing photographs',required=True)
     args=parser.parse_args()
     main(args)
