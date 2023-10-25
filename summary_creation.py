@@ -32,7 +32,7 @@ def update_scores(sim_data,image_scores,s_t,img,img_num,selection):
             break
     return image_scores, img_num
 
-def select_summary(sim_pth,q_pth,percent,num,s_t,t_a_r,selection,q_cutoff):
+def select_summary(sim_pth,q_pth,num,s_t,t_a_r,q_cutoff,percent=0,selection=False):
     if selection:
         select_num = int(num*(percent/100))
     else:
