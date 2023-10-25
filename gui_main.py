@@ -71,9 +71,9 @@ def make_win1():
             sg.Push()
         ],[
             sg.Push(),
-            sg.Text("Technical quality "),
-            sg.Slider((0,100), orientation='h', s=(10,15),default_value=50,resolution=5, tooltip="Recommended: 50%",key="-T_A_RATIO"),
             sg.Text("Aesthetic quality "),
+            sg.Slider((0,100), orientation='h', s=(10,15),default_value=50,resolution=5, tooltip="Recommended: 50%",key="-T_A_RATIO"),
+            sg.Text("Technical quality "),
             sg.Push(),
         ],
         [sg.HSeparator(),],
