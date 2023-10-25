@@ -66,7 +66,7 @@ def main(arg_list):
         tic = time.perf_counter()
         print("Selecting summary of photos")
         summary = select_summary(sim_pth=sim_path, q_pth=q_path, percent=percent, num=img_num, s_t=s_t, t_a_r=t_a_ratio,
-                                 selection=selection,q_cutoff=q_t)
+                                 selection=selection, q_cutoff=q_t)
         print("Summary:", summary)
         toc = time.perf_counter()
         print(f"Process took: {toc - tic:0.2f} s")
@@ -97,7 +97,10 @@ if __name__ == '__main__':
     parser.add_argument('-q_t', '--quality_threshold',
                         help='threshold of quality that will be included in the summary',type=int,default=80)
     parser.add_argument('-size_based','--size_based_selection',
-                        help='select based on output size',type=bool ,default=True)
+                        help='select based on output size',action='store_true')
+    parser.add_argument('-quality_based','--quality_based_selection',
+                        help='select based on output size',dest='size_based_selection', action='store_false')
+    parser.set_defaults(size_based_selection=True)
     parser.add_argument('-model','--model_path',
                         help='path to model for quality assessment',default= "model.pth")
     parser.add_argument( '-dir','--directory',
