@@ -39,7 +39,7 @@ def prepare_model(model_pth):
     model.eval()
     return model, device
 
-def calculate_qualities(pth, lst, result_pth, model_pth):
+def calculate_qualities(lst, result_pth, model_pth):
     if os.path.exists(result_pth):
         return
     obj = BRISQUE(url=False)
@@ -55,10 +55,10 @@ def calculate_qualities(pth, lst, result_pth, model_pth):
 
     score_a = 0
     for i ,img in enumerate(lst):
-        image = Image.open(os.path.join(pth, str(img))).convert('RGB')
+        image = Image.open(img).convert('RGB')
         im_a = test_transform(image) # transform for aesthetic quality
 
-        im_tensor = torch.tensor(io.imread(os.path.join(pth, img))) / 255.
+        im_tensor = torch.tensor(io.imread(img)) / 255.
         im_t = skimage.transform.resize_local_mean(im_tensor, output_shape=[448, 448]) # transform for technical quality
         score_t = obj.score(im_t)
 

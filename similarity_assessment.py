@@ -1,7 +1,6 @@
 __author__ = 'Lukáš Bartůněk'
 
 import cv2,os,json,operator
-import numpy as np
 from scipy.spatial import distance
 
 sift = cv2.SIFT_create(1000) # SIFT algorithm with number of keypoints
@@ -22,35 +21,41 @@ def image_resize(image):
     return image
 
 def calculate_matches(des1, des2):
-    matches = bf.knnMatch(des1, des2, k=2)
-    top_results1 = []
-    for m, n in matches:
-        if m.distance < 0.7 * n.distance:
-            top_results1.append([m])
+    try:
+        bf.knnMatch(des1, des2, k=2)
+        matches = bf.knnMatch(des1, des2, k=2)
+        top_results1 = []
+        for m, n in matches:
+            if m.distance < 0.7 * n.distance:
+                top_results1.append([m])
 
-    matches = bf.knnMatch(des2, des1, k=2)
-    top_results2 = []
-    for m, n in matches:
-        if m.distance < 0.7 * n.distance:
-            top_results2.append([m])
+        matches = bf.knnMatch(des2, des1, k=2)
+        top_results2 = []
+        for m, n in matches:
+            if m.distance < 0.7 * n.distance:
+                top_results2.append([m])
 
-    top_results = []
-    for match1 in top_results1:
-        match1_query_index = match1[0].queryIdx
-        match1_train_index = match1[0].trainIdx
+        top_results = []
+        for match1 in top_results1:
+            match1_query_index = match1[0].queryIdx
+            match1_train_index = match1[0].trainIdx
 
-        for match2 in top_results2:
-            match2_query_index = match2[0].queryIdx
-            match2_train_index = match2[0].trainIdx
+            for match2 in top_results2:
+                match2_query_index = match2[0].queryIdx
+                match2_train_index = match2[0].trainIdx
 
-            if (match1_query_index == match2_train_index) and (match1_train_index == match2_query_index):
-                top_results.append(match1)
-    return top_results
+                if (match1_query_index == match2_train_index) and (match1_train_index == match2_query_index):
+                    top_results.append(match1)
+        print(top_results)
+        return top_results
+    except:
+        return []
+
 
 def calculate_score(matches,keypoint1,keypoint2):
     return 100 * (matches/min(keypoint1,keypoint2))
 
-def calculate_similarities(pth,lst,result_pth,num,nbrs,content_pth,recalc=False):
+def calculate_similarities(lst,result_pth,num,nbrs,content_pth,recalc=False):
     max_score = 0
     if os.path.exists(result_pth) and not recalc:
         return 0
@@ -63,7 +68,7 @@ def calculate_similarities(pth,lst,result_pth,num,nbrs,content_pth,recalc=False)
         c_data = json.load(json_file)
     c_list = sorted(c_data, key=operator.itemgetter("id"))
     for i in range(num):
-        img = image_resize(cv2.imread(os.path.join(pth,lst[i])))
+        img = image_resize(cv2.imread(lst[i]))
         keypoints, descriptors = compute_SIFT(img)
         features[i] = (keypoints,descriptors)
     for i in range(num):
@@ -73,6 +78,7 @@ def calculate_similarities(pth,lst,result_pth,num,nbrs,content_pth,recalc=False)
                 continue
             keypoints_j, descriptors_j = features[j]
             matches = calculate_matches(descriptors_i, descriptors_j)
+            print(matches)
             f_sim_score = calculate_score(len(matches), len(keypoints_i), len(keypoints_j))
             c_sim_score = (1 - distance.cdist([c_list[i]["content"]], [c_list[j]["content"]], 'cosine')[0][0])*15
             if c_sim_score <0:

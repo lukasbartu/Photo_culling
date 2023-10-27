@@ -12,16 +12,16 @@ def pred_result(img):
     t = preprocessing.image.img_to_array(img)
     t = np.expand_dims(t, axis=0)
     t = preprocess_input(t)
-    f = class_model.predict(t)
+    f = class_model.predict(t,verbose=0)
     f = f.tolist()
     return f[0]
 
-def calculate_content(pth,lst,result_pth):
+def calculate_content(lst,result_pth):
     if os.path.exists(result_pth):
         return
     content_list = []
     for i, img in enumerate(lst):
-        temp = preprocessing.image.load_img(os.path.join(pth,img),color_mode='rgb', target_size=(224, 224))
+        temp = preprocessing.image.load_img(img,color_mode='rgb', target_size=(224, 224))
         res = pred_result(temp)
         content_list+=[{"id": i,
                         "img": lst[i],

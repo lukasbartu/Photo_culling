@@ -59,7 +59,7 @@ def make_win1():
         ],[
             sg.Text("Number of neighbours"),
             sg.Push(),
-            sg.Slider((0,50), orientation='h', s=(10,15),default_value=10, resolution=5, tooltip="Recommended: 10",key="-NBRS"),
+            sg.Slider((0,50), orientation='h', s=(10,15),default_value=5, resolution=5, tooltip="Recommended: 5",key="-NBRS"),
             sg.Push(),
             sg.Checkbox("Recalculate", key="-RECALC",enable_events=True)
         ],
@@ -163,7 +163,7 @@ while True:
             tic = time.perf_counter()
             print("Calculating quality...", end="   ")
             window.Refresh() if window else None
-            window.perform_long_operation(lambda: calculate_qualities(pth=folder, lst=img_list, result_pth=q_path,
+            window.perform_long_operation(lambda: calculate_qualities(lst=img_list, result_pth=q_path,
                                                                       model_pth="model.pth"), end_key="-QUA_DONE")
 
     elif event == "-QUA_DONE" and summ_create:
@@ -171,7 +171,7 @@ while True:
             window.Refresh() if window else None
             print("Creating content description...", end="   ")
             window.Refresh() if window else None
-            window.perform_long_operation(lambda:calculate_content(pth=folder, lst=img_list, result_pth=c_path)
+            window.perform_long_operation(lambda:calculate_content(lst=img_list, result_pth=c_path)
                                           ,end_key="-CON_DONE")
 
     elif event == "-CON_DONE" and summ_create:
@@ -184,7 +184,7 @@ while True:
             print("Calculating similarities...", end="   ")
             window.Refresh() if window else None
 
-            window.perform_long_operation(lambda: calculate_similarities(pth=folder, lst=img_list, result_pth=sim_path, num=img_num,
+            window.perform_long_operation(lambda: calculate_similarities(lst=img_list, result_pth=sim_path, num=img_num,
                                    nbrs=nbrs,content_pth=c_path,recalc=recalc),end_key="-SIM_DONE")
 
     elif event == "-SIM_DONE" and summ_create:
