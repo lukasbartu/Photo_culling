@@ -1,0 +1,30 @@
+First run: Similarity threshold and Quality threshold
+S_T <0,100> increm: 10
+Q_T <0,100> increm: 10
+T_W = 50
+
+>>> best S_T = 10
+
+Second run: Quality_threshold and Technical weight
+S_T = 10
+Q_T <0,100> increm: 10
+T_W <0,100> increm: 10
+
+>>> best Q_T = 60
+
+Third run: Similarity threshold and Technical weight
+S_T <0,20> increm: 2
+Q_T = 60
+T_W <0,100> increm: 10
+
+
+>>> best T_W = 0
+
+Fourth run: Similarity threshold and Quality threshold
+S_T <0,20> increm: 2
+T_W = 0
+Q_T <20,80> increm: 6
+
+
+
+
