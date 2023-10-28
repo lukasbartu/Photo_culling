@@ -22,12 +22,6 @@ def prepare_img_list(pth):
     list(global_path.rglob("*.jpg"))
     for p in list(global_path.rglob("*.jpg")):
         img_list.append(str(p))
-
-    #
-    # for path in os.scandir(pth):
-    #     if path.is_file():
-    #         if path.name.endswith(".jpg"):
-    #             img_list += [path.name]
     img_num = len(img_list)
     img_list = natsort.natsorted(img_list)
     return img_list,img_num
