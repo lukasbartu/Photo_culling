@@ -46,9 +46,8 @@ def calculate_matches(des1, des2):
 
                 if (match1_query_index == match2_train_index) and (match1_train_index == match2_query_index):
                     top_results.append(match1)
-        print(top_results)
         return top_results
-    except:
+    except Exception:
         return []
 
 
@@ -78,8 +77,10 @@ def calculate_similarities(lst,result_pth,num,nbrs,content_pth,recalc=False):
                 continue
             keypoints_j, descriptors_j = features[j]
             matches = calculate_matches(descriptors_i, descriptors_j)
-            print(matches)
-            f_sim_score = calculate_score(len(matches), len(keypoints_i), len(keypoints_j))
+            if len(keypoints_i) == 0 or len(keypoints_j)==0:
+                f_sim_score = 0
+            else:
+                f_sim_score = calculate_score(len(matches), len(keypoints_i), len(keypoints_j))
             c_sim_score = (1 - distance.cdist([c_list[i]["content"]], [c_list[j]["content"]], 'cosine')[0][0])*15
             if c_sim_score <0:
                 c_sim_score = 0
