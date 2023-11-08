@@ -2,3 +2,5 @@ images/
 .idea
 *.json
 jupyter_logs
+Selected images
+grid search results
