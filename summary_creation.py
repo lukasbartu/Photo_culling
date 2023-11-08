@@ -2,6 +2,7 @@ __author__ = 'Lukáš Bartůněk'
 
 import json
 import operator
+import natsort
 
 def calculate_img_score(q_pth,t_a_ratio):
     image_overall_scores = []
@@ -32,7 +33,7 @@ def update_scores(sim_data,image_scores,s_t,img,img_num,selection):
             break
     return image_scores, img_num
 
-def select_summary(sim_pth,q_pth,num,s_t,t_a_r,q_cutoff,percent=0,selection=False):
+def select_summary(sim_pth,q_pth,num,s_t,t_a_r,q_cutoff,percent=10,selection=False):
     if selection:
         select_num = int(num*(percent/100))
     else:
@@ -54,4 +55,5 @@ def select_summary(sim_pth,q_pth,num,s_t,t_a_r,q_cutoff,percent=0,selection=Fals
         image_scores[added_id].update({"score": 0})
         top_list.append(added_img)
         selected +=1
+        top_list = natsort.natsorted(top_list)
     return top_list
