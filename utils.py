@@ -5,7 +5,7 @@ import natsort
 import pathlib
 
 
-def prepare_paths(pth, abs_p):
+def prepare_paths(pth, abs_p=False):
     if abs_p:
         abs_pth = pth
     else:

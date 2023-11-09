@@ -7,7 +7,8 @@ from content_assessment import calculate_content
 from summary_creation import select_summary
 from utils import prepare_paths,prepare_img_list,remove_folder_name
 from training_parameters import load_trained
-from auto_summary import auto_select_summary, update_parameters
+from auto_summary import auto_select_summary, update_parameters, load_weights
+from metadata_creation import include_metadata_rating
 import time
 import os
 import PIL.Image
@@ -100,7 +101,7 @@ def make_win1():
             sg.Push(),
             sg.Text("Quality threshold"),
             sg.Push(),
-            sg.Slider((0,100), orientation='h', s=(10,15),default_value=50,resolution=1,key="-QUALITY_CUTOFF"),
+            sg.Slider((0,100), orientation='h', s=(10, 15), default_value=50, resolution=1, key="-QUALITY_CUTOFF"),
             sg.Push(),
         ],
         [sg.HSeparator(), ],
@@ -110,16 +111,16 @@ def make_win1():
             sg.Push(),
         ],[
             sg.Push(),
-            sg.Button("Use selected parameters", key="-SUMM_MAN"),
+            sg.Button("Use selected parameters", key="-SUMM_MAN", size=(40,1)),
             sg.Push(),
         ],[
             sg.Push(),
-            sg.Button("Use recommended parameters", key="-SUMM_REC"),
+            sg.Button("Use recommended parameters", key="-SUMM_REC", size=(40,1)),
             sg.Push()
         ],[
             sg.Push(),
             sg.Button("Automatic summary with trainable parameters", key="-SUMM_AUTO",
-                      tooltip="Only selection based on quality"),
+                      tooltip="Only selection based on quality", size=(40,1)),
             sg.Push()
         ], [
             [sg.Output(size=(60,4),key="-OUTPUT")],
@@ -232,9 +233,12 @@ while True:
         window.Refresh() if window else None
         if auto_summ:
             summary = auto_select_summary(img_list=img_list, s_file=sim_path, q_file=q_path, nbrs=nbrs)
+            weights = load_weights()
+            t_a_ratio = weights[0].item()
         else:
             summary = select_summary(sim_pth=sim_path, q_pth=q_path, percent=percent, num=img_num,
                                      s_t=s_t, t_a_r=t_a_ratio, selection=selection, q_cutoff=q_t)
+        include_metadata_rating(img_list=img_list, q_file=q_path, t_a_ratio= t_a_ratio)
         summary = remove_folder_name(summary,folder)
         img_list = remove_folder_name(img_list, folder)
         print("Summary calculated")
