@@ -11,9 +11,10 @@ from brisque import BRISQUE
 import skimage
 from skimage import io
 
-class NIMA(nn.Module):
 
+class NIMA(nn.Module):
     """Neural IMage Assessment model by Google"""
+
     def __init__(self, base_model, num_classes=10):
         super(NIMA, self).__init__()
         self.features = base_model.features
@@ -26,25 +27,27 @@ class NIMA(nn.Module):
         out_f = self.features(x)
         out = out_f.view(out_f.size(0), -1)
         out = self.classifier(out)
-        return out_f,out
+        return out_f, out
 
-def prepare_model(model_pth):
+
+def prepare_model(model_pth, cuda=True):
     base_model = models.vgg16(weights=models.VGG16_Weights.DEFAULT)
     model = NIMA(base_model)
     model.load_state_dict(torch.load(os.path.join(os.getcwd(), model_pth), map_location=torch.device('cpu')))
     seed = 42
     torch.manual_seed(seed)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() and cuda else "cpu")
     model = model.to(device)
     model.eval()
     return model, device
 
-def calculate_qualities(lst, result_pth, model_pth):
+
+def calculate_qualities(lst, result_pth, model_pth, cuda=True):
     if os.path.exists(result_pth):
         return
     obj = BRISQUE(url=False)
-    model, device = prepare_model(model_pth)
-    q_list = [] # list to store results
+    model, device = prepare_model(model_pth, cuda)
+    q_list = []  # list to store results
     test_transform = transforms.Compose([
         transforms.Resize(256),
         transforms.RandomCrop(224),
@@ -54,12 +57,13 @@ def calculate_qualities(lst, result_pth, model_pth):
     ])
 
     score_a = 0
-    for i ,img in enumerate(lst):
+    for i, img in enumerate(lst):
         image = Image.open(img).convert('RGB')
-        im_a = test_transform(image) # transform for aesthetic quality
+        im_a = test_transform(image)  # transform for aesthetic quality
 
         im_tensor = torch.tensor(io.imread(img)) / 255.
-        im_t = skimage.transform.resize_local_mean(im_tensor, output_shape=[448, 448]) # transform for technical quality
+        im_t = skimage.transform.resize_local_mean(im_tensor,
+                                                   output_shape=[448, 448])  # transform for technical quality
         score_t = obj.score(im_t)
 
         if score_t < 0:
@@ -76,7 +80,7 @@ def calculate_qualities(lst, result_pth, model_pth):
             score_a += j * e
         q_list += [{"id": i,
                     "img": lst[i],
-                    "aesthetic_quality": float(score_a)*10,
+                    "aesthetic_quality": float(score_a) * 10,
                     "technical_quality": (100 - score_t)}]
         score_a = 0
     with open(os.path.join(os.getcwd(), result_pth), "w") as write_file:

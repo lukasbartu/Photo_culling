@@ -1,7 +1,8 @@
 __author__ = 'Lukáš Bartůněk'
 
 import pyexiv2
-import operator, json
+import operator
+import json
 
 
 def include_metadata_rating(img_list,q_file, t_a_ratio):

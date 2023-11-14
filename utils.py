@@ -29,6 +29,7 @@ def prepare_img_list(pth):
 
 
 def remove_folder_name(lst, f):
-    for i, l in enumerate(lst):
-        lst[i] = l.replace(str(f + "/"), "")
-    return lst
+    copied_list = list.copy(lst)
+    for i, l in enumerate(copied_list):
+        copied_list[i] = l.replace(str(f + "/"), "")
+    return copied_list
