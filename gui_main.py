@@ -5,7 +5,7 @@ from quality_assessment import calculate_qualities
 from similarity_assessment import calculate_similarities
 from content_assessment import calculate_content
 from summary_creation import select_summary
-from utils import prepare_paths,prepare_img_list,remove_folder_name
+from utils import prepare_paths, prepare_img_list, remove_folder_name
 from training_parameters import load_trained
 from auto_summary import auto_select_summary, update_parameters, load_weights
 from metadata_creation import include_metadata_rating
@@ -22,7 +22,8 @@ import shutil
 # PysimpleGUI demo
 class BtnInfo:
     def __init__(self, state=True):
-        self.state = state        # Can have 3 states - True, False, None (disabled)
+        self.state = state  # Can have 3 states - True, False, None (disabled)
+
 
 # PysimpleGUI demo
 def convert_to_bytes(file_or_bytes, resize=None):
@@ -48,12 +49,13 @@ def convert_to_bytes(file_or_bytes, resize=None):
     cur_width, cur_height = img.size
     if resize:
         new_width, new_height = resize
-        scale = min(new_height/cur_height, new_width/cur_width)
-        img = img.resize((int(cur_width*scale), int(cur_height*scale)), PIL.Image.LANCZOS)
+        scale = min(new_height / cur_height, new_width / cur_width)
+        img = img.resize((int(cur_width * scale), int(cur_height * scale)), PIL.Image.LANCZOS)
     with io.BytesIO() as bio:
         img.save(bio, format="PNG")
         del img
         return bio.getvalue()
+
 
 def make_win1():
     layout = [
@@ -63,45 +65,48 @@ def make_win1():
             sg.In(size=(25, 1), enable_events=True, key="-FOLDER-"),
             sg.FolderBrowse(),
             sg.Push()
-        ],[
+        ], [
             sg.Text("Number of neighbours"),
             sg.Push(),
-            sg.Slider((0,50), orientation='h', s=(10,15),default_value=10, resolution=5,
-                      tooltip="Recommended: 10\nBased on maximum number of duplicates in a row",key="-NBRS"),
+            sg.Slider((0, 50), orientation='h', s=(10, 15), default_value=10, resolution=5,
+                      tooltip="Recommended: 10\nBased on maximum number of duplicates in a row", key="-NBRS"),
             sg.Push(),
-            sg.Checkbox("Recalculate", key="-RECALC",enable_events=True)
+            sg.Checkbox("Recalculate", key="-RECALC", enable_events=True)
         ],
-        [sg.HSeparator(),],
+        [sg.HSeparator(), ],
         [
             sg.Push(),
             sg.Text("Similarity threshold"),
-            sg.Slider((0, 50), orientation='h', s=(10, 15), default_value=10,resolution=2, tooltip="Recommended: 10",key="-S_T"),
+            sg.Slider((0, 50), orientation='h', s=(10, 15), default_value=10, resolution=2, tooltip="Recommended: 10",
+                      key="-S_T"),
             sg.Push()
-        ],[
+        ], [
             sg.Push(),
             sg.Text("Aesthetic quality "),
-            sg.Slider((0,100), orientation='h', s=(10,15),default_value=50,resolution=2, tooltip="Recommended: 50%",key="-T_A_RATIO"),
+            sg.Slider((0, 100), orientation='h', s=(10, 15), default_value=50, resolution=2, tooltip="Recommended: 50%",
+                      key="-T_A_RATIO"),
             sg.Text("Technical quality "),
             sg.Push(),
         ],
-        [sg.HSeparator(),],
+        [sg.HSeparator(), ],
         [
             sg.Push(),
             sg.Text("Selection based on:"),
             sg.Push(),
             sg.Button('Output size', size=(10, 2), button_color='white on green', key='-B-'),
             sg.Push()
-        ],[
+        ], [
             sg.Push(),
             sg.Text("Output size in percents"),
             sg.Push(),
-            sg.Slider((0,100), orientation='h', s=(10,15),default_value=10,resolution=2, tooltip="Recommended: 10%",key="-PERCENT"),
+            sg.Slider((0, 100), orientation='h', s=(10, 15), default_value=10, resolution=2, tooltip="Recommended: 10%",
+                      key="-SIZE"),
             sg.Push(),
-        ],[
+        ], [
             sg.Push(),
             sg.Text("Quality threshold"),
             sg.Push(),
-            sg.Slider((0,100), orientation='h', s=(10, 15), default_value=50, resolution=1, key="-QUALITY_CUTOFF"),
+            sg.Slider((0, 100), orientation='h', s=(10, 15), default_value=50, resolution=1, key="-QUALITY_CUTOFF"),
             sg.Push(),
         ],
         [sg.HSeparator(), ],
@@ -109,50 +114,51 @@ def make_win1():
             sg.Push(),
             sg.Text("Summary generation"),
             sg.Push(),
-        ],[
+        ], [
             sg.Push(),
-            sg.Button("Use selected parameters", key="-SUMM_MAN", size=(40,1)),
+            sg.Button("Use selected parameters", key="-SUMM_MAN", size=(40, 1)),
             sg.Push(),
-        ],[
+        ], [
             sg.Push(),
-            sg.Button("Use recommended parameters", key="-SUMM_REC", size=(40,1)),
-            sg.Push()
-        ],[
-            sg.Push(),
-            sg.Button("Automatic summary with trainable parameters", key="-SUMM_AUTO",
-                      tooltip="Only selection based on quality", size=(40,1)),
+            sg.Button("Use recommended parameters", key="-SUMM_REC", size=(40, 1)),
             sg.Push()
         ], [
-            [sg.Output(size=(60,4),key="-OUTPUT")],
+            sg.Push(),
+            sg.Button("Automatic summary with trainable parameters", key="-SUMM_AUTO",
+                      tooltip="Only selection based on quality", size=(40, 1)),
+            sg.Push()
+        ], [
+            [sg.Output(size=(60, 4), key="-OUTPUT")],
         ]
     ]
-    return sg.Window("Photo selector", layout,finalize=True)
+    return sg.Window("Photo selector", layout, finalize=True)
 
 
 def make_win2():
-    left_col = [[sg.Text("Selected images"),],
+    left_col = [[sg.Text("Selected images"), ],
                 [sg.Listbox(values=[], enable_events=True, size=(40, 25), key='-SUM_LIST'),
-                 sg.Button("Deselect image", key="-MOVE_DOWN",size=(10, 2)),],
+                 sg.Button("Deselect image", key="-MOVE_DOWN", size=(10, 2)), ],
                 [sg.Text("Not selected images")],
                 [sg.Listbox(values=[], enable_events=True, size=(40, 25), key='-REST_LIST'),
-                 sg.Button("Select image", key="-MOVE_UP", size=(10, 2)),]]
+                 sg.Button("Select image", key="-MOVE_UP", size=(10, 2)), ]]
     images_col = [[sg.Text('You choose from the list:')],
-                  [sg.Push(),sg.Text(key='-TOUT-'), sg.Push()],
+                  [sg.Push(), sg.Text(key='-TOUT-'), sg.Push()],
                   [sg.Image(key='-IMAGE-', size=(900, 760))]]
     layout = [
         [
             sg.Column(left_col, element_justification='c'),
             sg.VSeparator(),
             sg.Column(images_col, element_justification='c')
-        ],[
+        ], [
             sg.Push(),
             sg.Button("Update parameters for automatic selection", key="-UPDATE_PARA", size=(20, 2)),
-            sg.In(key="-COPY",visible=False,enable_events=True),
+            sg.In(key="-COPY", visible=False, enable_events=True),
             sg.FolderBrowse("Copy selection into folder", size=(15, 2)),
             sg.Button("Exit", key="-EXIT", size=(10, 2)),
         ]
     ]
-    return sg.Window("Selection window",layout,finalize=True)
+    return sg.Window("Selection window", layout, finalize=True)
+
 
 window_default, window_selection = make_win1(), None
 
@@ -162,7 +168,7 @@ sim_path = None
 q_path = None
 c_path = None
 img_num = None
-percent = None
+size = None
 c_q_ratio = None
 selection = True
 summ_create = False
@@ -179,7 +185,7 @@ while True:
             break
     if event == "-FOLDER-":
         folder = values["-FOLDER-"]
-        _, sim_path, q_path, c_path = prepare_paths(folder,abs_p=True)
+        _, sim_path, q_path, c_path = prepare_paths(folder, abs_p=True)
         img_list, img_num = prepare_img_list(folder)
     if event == '-B-':
         selection = not selection
@@ -187,12 +193,12 @@ while True:
                              button_color='white on green' if selection else 'white on blue')
     if event == "-SUMM_REC" or event == "-SUMM_AUTO" or event == "-SUMM_MAN":
         if event == "-SUMM_REC":
-            percent = values["-PERCENT"]
+            size = values["-SIZE"]
             s_t = values["-S_T"]
             t_a_ratio = values["-T_A_RATIO"] / 100
             q_t = values["-QUALITY_CUTOFF"]
         elif event == "SUMM_MAN":
-            q_t,s_t,t_a_ratio,percent = load_trained()
+            q_t, s_t, t_a_ratio, size = load_trained()
         else:
             auto_summ = True
         if not folder:
@@ -223,7 +229,7 @@ while True:
         window.Refresh() if window else None
 
         window.perform_long_operation(lambda: calculate_similarities(lst=img_list, result_pth=sim_path, num=img_num,
-                                                                     nbrs=nbrs, content_pth=c_path,recalc=recalc),
+                                                                     nbrs=nbrs, content_pth=c_path, recalc=recalc),
                                       end_key="-SIM_DONE")
 
     elif event == "-SIM_DONE" and summ_create:
@@ -236,10 +242,10 @@ while True:
             weights = load_weights()
             t_a_ratio = weights[0].item()
         else:
-            summary = select_summary(sim_pth=sim_path, q_pth=q_path, percent=percent, num=img_num,
-                                     s_t=s_t, t_a_r=t_a_ratio, selection=selection, q_cutoff=q_t)
+            summary = select_summary(sim_pth=sim_path, q_pth=q_path, size= size, num=img_num,
+                                     s_t=s_t, t_a_ratio= t_a_ratio, selection=selection, q_cutoff= q_t)
         include_metadata_rating(img_list=img_list, q_file=q_path, t_a_ratio= t_a_ratio)
-        summary = remove_folder_name(summary,folder)
+        summary = remove_folder_name(summary, folder)
         img_list = remove_folder_name(img_list, folder)
         print("Summary calculated")
         window.Refresh() if window else None
@@ -250,7 +256,7 @@ while True:
             window_selection.close()
         window_selection = make_win2()
         window_selection['-SUM_LIST'].update(summary)
-        rest_list = natsort.natsorted(list(set(img_list)-set(summary)))
+        rest_list = natsort.natsorted(list(set(img_list) - set(summary)))
         window_selection['-REST_LIST'].update(rest_list)
 
     if event == '-SUM_LIST' or event == '-REST_LIST':  # A file was chosen from the listbox
@@ -258,7 +264,7 @@ while True:
             highlight = values[event][0]
             filename = os.path.join(folder, highlight)
             window['-TOUT-'].update(highlight)
-            window['-IMAGE-'].update(data=convert_to_bytes(filename, resize=(900,760)))
+            window['-IMAGE-'].update(data=convert_to_bytes(filename, resize=(900, 760)))
         except Exception:
             pass
     if event == '-MOVE_UP':
@@ -278,7 +284,7 @@ while True:
             pass
     if event == '-MOVE_DOWN':
         updated = False
-        window.write_event_value("-PARA_UPDATED",None)
+        window.write_event_value("-PARA_UPDATED", None)
         try:
             rest_list.append(highlight)
             ind = summary.index(highlight)
@@ -304,4 +310,3 @@ while True:
         updated = True
     if event == "-PARA_UPDATED":
         window['-UPDATE_PARA'].update(text="UPDATED" if updated else "Update parameters for automatic selection")
-

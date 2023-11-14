@@ -78,7 +78,7 @@ def format_data(s_file,q_file,nbrs):
 
 def auto_select_summary(img_list, s_file, q_file, nbrs):
     data_quality, data_similarity = format_data(s_file, q_file, nbrs)
-    weights = load_weights()
+    weights = load_weights()  # [t_a_r, q_t, f_c_r, s_t]
     pred = forward(data_quality, data_similarity, weights)
     summary = []
     for i, p in enumerate(pred):

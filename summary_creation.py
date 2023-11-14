@@ -33,12 +33,12 @@ def update_scores(sim_data,image_scores,s_t,img,img_num,selection):
             break
     return image_scores, img_num
 
-def select_summary(sim_pth,q_pth,num,s_t,t_a_r,q_cutoff,percent=10,selection=False):
+def select_summary(sim_pth,q_pth,num,s_t,t_a_ratio,q_cutoff,size=10,selection=False):
     if selection:
-        select_num = int(num*(percent/100))
+        select_num = int(num*(size/100))
     else:
         select_num = num
-    image_scores = calculate_img_score(q_pth, t_a_r)
+    image_scores = calculate_img_score(q_pth, t_a_ratio)
     top_list = []
     selected = 0
     with open(sim_pth) as json_file:
