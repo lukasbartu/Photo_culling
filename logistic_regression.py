@@ -3,7 +3,8 @@ __author__ = 'Lukáš Bartůněk'
 import torch
 import json
 import operator
-from utils import get_class_weights
+import numpy as np
+from utils import get_class_weights, get_sim_window
 
 
 def forward(x, s, w):
@@ -40,18 +41,18 @@ def format_data(s_file, q_file):
         s_data = json.load(f)
     s_list = sorted(s_data, key=operator.itemgetter("first_id"))
 
-    max_nbrs = 20
+    nbrs = get_sim_window(s_list)
     last_id = - 1
     data_sim = []
     for s in s_list:
         if not s["first_id"] == last_id:
             data_sim.append([])
-            spaces = max_nbrs - s["first_id"]
+            spaces = nbrs - s["first_id"]
             while spaces > 0:
                 data_sim[s["first_id"]].append([0, 0, 0, 0])
                 spaces -= 1
             if not last_id == -1:
-                while len(data_sim[last_id]) < max_nbrs*2:
+                while len(data_sim[last_id]) < nbrs * 2:
                     data_sim[last_id].append([0, 0, 0, 0])
             last_id = s["first_id"]
         second_img_score = [0, 0]
@@ -60,8 +61,13 @@ def format_data(s_file, q_file):
                 second_img_score = [q["aesthetic_quality"], q["technical_quality"]]
         data_sim[last_id].append(
             [second_img_score[0], second_img_score[1], s["feature_similarity_score"], s["content_similarity_score"]])
-    while len(data_sim[last_id]) < max_nbrs*2:
+    while len(data_sim[last_id]) < nbrs * 2:
         data_sim[last_id].append([0, 0, 0, 0])
+
+    pad = (20 - nbrs)
+    data_sim = np.asarray(data_sim)
+    data_sim = np.pad(data_sim, ((0, 0), (pad, pad), (0, 0)))
+    print(data_sim.shape)
 
     data_q = []
     for q in q_list:
@@ -130,3 +136,4 @@ def update_parameters(s, lst, s_file, q_file):
 
     new_weights = (0.5 * best_weights) + (0.5 * torch.asarray(old_weights))
     save_weights(new_weights.tolist())
+

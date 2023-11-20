@@ -135,7 +135,7 @@ def make_win1():
             sg.Push()
         ], [
             sg.Push(),
-            sg.Button("Automatic summary using neural network NON FUNCTIONAL", key="-SUMM_AUTO_NN",
+            sg.Button("Automatic summary using neural network", key="-SUMM_AUTO_NN",
                       tooltip="Only selection based on quality", size=(40, 1)),
             sg.Push()
         ],
@@ -215,11 +215,11 @@ try:
                 s_t = values["-S_T"]
                 t_a_ratio = values["-T_A_RATIO"] / 100
                 q_t = values["-QUALITY_CUTOFF"]
-            elif event == "SUMM_MAN":
+            elif event == "-SUMM_MAN":
                 q_t, s_t, t_a_ratio, size = load_trained()
-            elif event == "-SUM_AUTO_REG":
+            elif event == "-SUMM_AUTO_REG":
                 auto_summ_reg = True
-            else:
+            elif event == "-SUMM_AUTO_NN":
                 auto_summ_nn = True
             if not folder:
                 sg.popup("No folder selected")
@@ -264,7 +264,7 @@ try:
                 weights = logistic_regression.load_weights()
                 t_a_ratio = weights[0].item()
             elif auto_summ_nn:
-                summary = neural_network.summary(lst=img_list, s_file=sim_path, q_file=q_path,nbrs=nbrs)
+                summary = neural_network.summary(lst=img_list, s_file=sim_path, q_file=q_path)
                 t_a_ratio = 50
             else:
                 summary = select_summary(sim_pth=sim_path, q_pth=q_path, size=size, num=img_num,
@@ -289,6 +289,8 @@ try:
             window_selection['-SUM_LIST'].update(summary)
             rest_list = natsort.natsorted(list(set(img_list_removed) - set(summary)))
             window_selection['-REST_LIST'].update(rest_list)
+            auto_summ_nn = False
+            auto_summ_reg = False
 
         if event == '-SUM_LIST' or event == '-REST_LIST':  # A file was chosen from the listbox
             try:

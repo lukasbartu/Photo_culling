@@ -45,3 +45,12 @@ def get_class_weights(results):
             false_samples += 1
     class_weights = [ (1 / true_samples) * (len(results) / 2.0) , (1 / false_samples) * (len(results) / 2.0)]
     return class_weights
+
+def get_sim_window(s_lst):
+    first_id =  s_lst[0]["first_id"]
+    n = 0
+
+    for l in s_lst:
+        if l["first_id"] == first_id:
+            n+=1
+    return n

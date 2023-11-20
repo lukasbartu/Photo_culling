@@ -219,3 +219,4 @@ with torch.no_grad():
         f1 = (2 * precision * recall) / (precision + recall)
 
 print("F1 Score:", f1*100)
+

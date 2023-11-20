@@ -1,6 +1,6 @@
 __author__ = 'Lukáš Bartůněk'
 
-from utils import prepare_img_list, prepare_paths, get_class_weights
+from utils import get_class_weights, get_sim_window
 import json
 import operator
 import numpy as np
@@ -10,7 +10,7 @@ import keras
 from keras.callbacks import ModelCheckpoint
 
 
-def format_data(s_file, q_file, nbrs):
+def format_data(s_file, q_file):
     with open(q_file) as f:
         q_data = json.load(f)
     q_list = sorted(q_data, key=operator.itemgetter("id"))
@@ -18,6 +18,7 @@ def format_data(s_file, q_file, nbrs):
         s_data = json.load(f)
     s_list = sorted(s_data, key=operator.itemgetter("first_id"))
 
+    nbrs = get_sim_window(s_list)
     last_id = -1
     data_sim = []
     for s in s_list:
@@ -56,8 +57,8 @@ def format_data(s_file, q_file, nbrs):
     return data
 
 
-def summary(lst, s_file, q_file, nbrs):
-    data = format_data(s_file, q_file, nbrs)
+def summary(lst, s_file, q_file):
+    data = format_data(s_file, q_file)
 
     model = keras.models.load_model("data/best_nn_model.keras")
 
@@ -70,8 +71,8 @@ def summary(lst, s_file, q_file, nbrs):
     return s
 
 
-def update_model(s, lst, s_file, q_file, nbrs):
-    data = format_data(s_file, q_file, nbrs)
+def update_model(s, lst, s_file, q_file):
+    data = format_data(s_file, q_file)
 
     results = []
     for i, img in enumerate(lst):
@@ -96,13 +97,4 @@ def update_model(s, lst, s_file, q_file, nbrs):
 
     model.save("data/best_nn_model.keras")
 
-
-path = "/images/Ples/fotokoutek"
-
-abs_path, s_pth, q_pth, _ = prepare_paths(path)
-img_list, _ = prepare_img_list(abs_path)
-
-s = summary(img_list, s_pth, q_pth, 20)
-
-update_model(s, img_list, s_pth, q_pth, 20)
 

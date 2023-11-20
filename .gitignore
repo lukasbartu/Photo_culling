@@ -5,5 +5,11 @@ jupyter_logs
 Selected images
 grid search results
 generate_training_data nn.py
-*checkpoint*
+best_checkpoint_nn.data-00000-of-00001
+best_checkpoint_nn.index
+testing methods/nn/best_checkpoint_nn.index
+testing methods/nn/best_checkpoint_nn.data-00000-of-00001
+checkpoint
+testing methods/nn/best_nn_model.keras
+
 
