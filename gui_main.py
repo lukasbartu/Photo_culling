@@ -7,7 +7,9 @@ from content_assessment import calculate_content
 from summary_creation import select_summary
 from utils import prepare_paths, prepare_img_list, remove_folder_name
 from training_parameters import load_trained
-from auto_summary import auto_select_summary, update_parameters, load_weights
+import logistic_regression
+import neural_network
+
 from metadata_creation import include_metadata_rating
 import time
 import os
@@ -17,7 +19,6 @@ import base64
 import natsort
 import pathlib
 import shutil
-
 
 # PysimpleGUI demo
 class BtnInfo:
@@ -57,6 +58,11 @@ def convert_to_bytes(file_or_bytes, resize=None):
         return bio.getvalue()
 
 
+def update_both_models(s, lst, s_file, q_file, nbrs):
+    logistic_regression.update_parameters(s, lst, s_file, q_file)
+    neural_network.update_model(s, lst, s_file, q_file, nbrs)
+
+
 def make_win1():
     layout = [
         [
@@ -68,7 +74,7 @@ def make_win1():
         ], [
             sg.Text("Number of neighbours"),
             sg.Push(),
-            sg.Slider((0, 50), orientation='h', s=(10, 15), default_value=10, resolution=5,
+            sg.Slider((0, 20), orientation='h', s=(10, 15), default_value=10, resolution=1,
                       tooltip="Recommended: 10\nBased on maximum number of duplicates in a row", key="-NBRS"),
             sg.Push(),
             sg.Checkbox("Recalculate", key="-RECALC", enable_events=True)
@@ -124,7 +130,12 @@ def make_win1():
             sg.Push()
         ], [
             sg.Push(),
-            sg.Button("Automatic summary with trainable parameters", key="-SUMM_AUTO",
+            sg.Button("Automatic summary using logistic regression", key="-SUMM_AUTO_REG",
+                      tooltip="Only selection based on quality", size=(40, 1)),
+            sg.Push()
+        ], [
+            sg.Push(),
+            sg.Button("Automatic summary using neural network NON FUNCTIONAL", key="-SUMM_AUTO_NN",
                       tooltip="Only selection based on quality", size=(40, 1)),
             sg.Push()
         ],
@@ -177,7 +188,8 @@ size = None
 c_q_ratio = None
 selection = True
 summ_create = False
-auto_summ = False
+auto_summ_nn = False
+auto_summ_reg = False
 updated = False
 # Create an event loop
 try:
@@ -197,7 +209,7 @@ try:
             selection = not selection
             window['-B-'].update(text='Output size' if selection else 'Quality threshold',
                                  button_color='white on green' if selection else 'white on blue')
-        if event == "-SUMM_REC" or event == "-SUMM_AUTO" or event == "-SUMM_MAN":
+        if event == "-SUMM_REC" or event == "-SUMM_AUTO_REG" or event == "-SUMM_MAN" or event == "-SUMM_AUTO_NN":
             if event == "-SUMM_REC":
                 size = values["-SIZE"]
                 s_t = values["-S_T"]
@@ -205,8 +217,10 @@ try:
                 q_t = values["-QUALITY_CUTOFF"]
             elif event == "SUMM_MAN":
                 q_t, s_t, t_a_ratio, size = load_trained()
+            elif event == "-SUM_AUTO_REG":
+                auto_summ_reg = True
             else:
-                auto_summ = True
+                auto_summ_nn = True
             if not folder:
                 sg.popup("No folder selected")
             else:
@@ -245,18 +259,27 @@ try:
             window.Refresh() if window else None
             print("Selecting summary of photos...", end="   ")
             window.Refresh() if window else None
-            if auto_summ:
-                summary = auto_select_summary(img_list=img_list, s_file=sim_path, q_file=q_path, nbrs=nbrs)
-                weights = load_weights()
+            if auto_summ_reg:
+                summary = logistic_regression.summary(lst=img_list, s_file=sim_path, q_file=q_path)
+                weights = logistic_regression.load_weights()
                 t_a_ratio = weights[0].item()
+            elif auto_summ_nn:
+                summary = neural_network.summary(lst=img_list, s_file=sim_path, q_file=q_path,nbrs=nbrs)
+                t_a_ratio = 50
             else:
                 summary = select_summary(sim_pth=sim_path, q_pth=q_path, size=size, num=img_num,
                                          s_t=s_t, t_a_ratio= t_a_ratio, selection=selection, q_cutoff= q_t)
-            include_metadata_rating(img_list=img_list, q_file=q_path, t_a_ratio=t_a_ratio)
-            summary = remove_folder_name(summary, folder)
-            img_list_removed = remove_folder_name(img_list, folder)
             print("Summary calculated")
             window.Refresh() if window else None
+
+            print("Writing metadata...", end="   ")
+            window.Refresh() if window else None
+            include_metadata_rating(img_list=img_list, q_file=q_path, t_a_ratio=t_a_ratio)
+            print("Metadata written")
+            window.Refresh() if window else None
+
+            summary = remove_folder_name(summary, folder)
+            img_list_removed = remove_folder_name(img_list, folder)
             toc = time.perf_counter()
             print(f"Process took: {toc - tic:0.2f} s")
             window.Refresh() if window else None
@@ -312,8 +335,10 @@ try:
             for img in summary:
                 shutil.copy2(os.path.join(folder, img), save_folder)
         if event == "-UPDATE_PARA":
-            window.perform_long_operation(lambda: update_parameters(summary=summary, img_list=img_list,
-                                                                    s_file=sim_path, q_file=q_path, nbrs=nbrs)
+            if len(summary) == 0:
+                sg.popup("Empty summary")
+            window.perform_long_operation(lambda: update_both_models(s=summary, lst=img_list, s_file=sim_path,
+                                                                     q_file=q_path, nbrs=nbrs)
                                           , end_key="-PARA_UPDATED")
             updated = True
         if event == "-PARA_UPDATED":

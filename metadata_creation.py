@@ -28,8 +28,12 @@ def include_metadata_rating(img_list,q_file, t_a_ratio):
         rating_percent = int(((mixed_list[i]-lowest_q) /(interval_size*5))*100)
         if rating == 6:
             rating = 5
-        metadata = pyexiv2.ImageMetadata(img)
-        metadata.read()
-        metadata['Exif.Image.Rating'] = pyexiv2.ExifTag('Exif.Image.Rating', rating)
-        metadata['Exif.Image.Rating'] = pyexiv2.ExifTag('Exif.Image.RatingPercent', rating_percent)
-        metadata.write()
+        try:
+            metadata = pyexiv2.ImageMetadata(img)
+            metadata.read()
+            metadata['Exif.Image.Rating'] = pyexiv2.ExifTag('Exif.Image.Rating', rating)
+            metadata['Exif.Image.Rating'] = pyexiv2.ExifTag('Exif.Image.RatingPercent', rating_percent)
+            metadata.write()
+        except:
+            pass
+

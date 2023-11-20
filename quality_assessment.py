@@ -36,7 +36,10 @@ def prepare_model(model_pth, cuda=True):
     model.load_state_dict(torch.load(os.path.join(os.getcwd(), model_pth), map_location=torch.device('cpu')))
     seed = 42
     torch.manual_seed(seed)
-    device = torch.device("cuda" if torch.cuda.is_available() and cuda else "cpu")
+    try:
+        device = torch.device("cuda" if torch.cuda.is_available() and cuda else "cpu")
+    except Exception:
+        device = torch.device("cpu")
     model = model.to(device)
     model.eval()
     return model, device

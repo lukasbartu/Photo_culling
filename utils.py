@@ -33,3 +33,15 @@ def remove_folder_name(lst, f):
     for i, l in enumerate(copied_list):
         copied_list[i] = l.replace(str(f + "/"), "")
     return copied_list
+
+
+def get_class_weights(results):
+    true_samples = 0
+    false_samples = 0
+    for result in results:
+        if result == 1:
+            true_samples += 1
+        else:
+            false_samples += 1
+    class_weights = [ (1 / true_samples) * (len(results) / 2.0) , (1 / false_samples) * (len(results) / 2.0)]
+    return class_weights
