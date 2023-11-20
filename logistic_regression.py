@@ -3,18 +3,15 @@ __author__ = 'Lukáš Bartůněk'
 import torch
 import json
 import operator
+from utils import get_class_weights
 
 
 def forward(x, s, w):
     ui = (x[0] * (1 - (w[0]/100)) + x[1] * (w[0]/100))
     uj = (s[0] * (1 - (w[0]/100)) + s[1] * (w[0]/100))
-    si = (s[2] * (1 - (w[2]/100)) + s[3] * (w[2]/100))
-    temp1 = torch.sigmoid(w[3] - si)
-    temp2 = torch.sigmoid(ui - uj)  # Ui > Uj ?
-    temp4 = 1 - (1-((1 - temp1) * temp2)) * (1-temp1)
-    temp5 = torch.prod(temp4, dim=0)
+    sij = (s[2] * (1 - (w[2]/100)) + s[3] * (w[2]/100))
 
-    p = torch.sigmoid(ui - w[1]) * temp5
+    p = torch.sigmoid(ui - w[1]) * torch.prod(1 - torch.sigmoid(sij - w[3]) * torch.sigmoid(uj - ui), dim=0)
     return p
 
 
@@ -25,17 +22,17 @@ def loss_fun(y, y_pred, c_w):
 
 
 def load_weights():
-    with open("data/auto_summary_weights.json", "r") as read_file:
+    with open("data/logistic_regression_weights.json", "r") as read_file:
         weights = json.load(read_file)
     return torch.asarray(weights, requires_grad=True)
 
 
 def save_weights(weights):
-    with open("data/auto_summary_weights.json", "w") as write_file:
+    with open("data/logistic_regression_weights.json", "w") as write_file:
         json.dump(weights, write_file, indent=2)
 
 
-def format_data(s_file,q_file,nbrs):
+def format_data(s_file, q_file):
     with open(q_file) as f:
         q_data = json.load(f)
     q_list = sorted(q_data, key=operator.itemgetter("id"))
@@ -43,26 +40,27 @@ def format_data(s_file,q_file,nbrs):
         s_data = json.load(f)
     s_list = sorted(s_data, key=operator.itemgetter("first_id"))
 
+    max_nbrs = 20
     last_id = - 1
     data_sim = []
     for s in s_list:
         if not s["first_id"] == last_id:
             data_sim.append([])
-            spaces = nbrs - s["first_id"]
+            spaces = max_nbrs - s["first_id"]
             while spaces > 0:
                 data_sim[s["first_id"]].append([0, 0, 0, 0])
                 spaces -= 1
             if not last_id == -1:
-                while len(data_sim[last_id]) < nbrs*2:
+                while len(data_sim[last_id]) < max_nbrs*2:
                     data_sim[last_id].append([0, 0, 0, 0])
             last_id = s["first_id"]
-        second_img_score = [0,0]
+        second_img_score = [0, 0]
         for q in q_list:
             if q["id"] == s["second_id"]:
                 second_img_score = [q["aesthetic_quality"], q["technical_quality"]]
         data_sim[last_id].append(
             [second_img_score[0], second_img_score[1], s["feature_similarity_score"], s["content_similarity_score"]])
-    while len(data_sim[last_id]) < nbrs*2:
+    while len(data_sim[last_id]) < max_nbrs*2:
         data_sim[last_id].append([0, 0, 0, 0])
 
     data_q = []
@@ -76,25 +74,25 @@ def format_data(s_file,q_file,nbrs):
     return data_q, data_sim
 
 
-def auto_select_summary(img_list, s_file, q_file, nbrs):
-    data_quality, data_similarity = format_data(s_file, q_file, nbrs)
+def summary(lst, s_file, q_file):
+    data_quality, data_similarity = format_data(s_file, q_file)
     weights = load_weights()  # [t_a_r, q_t, f_c_r, s_t]
     pred = forward(data_quality, data_similarity, weights)
-    summary = []
+    s = []
     for i, p in enumerate(pred):
         if p >= 0.5:
-            summary.append(img_list[i])
-    return summary
+            s.append(lst[i])
+    return s
 
 
-def update_parameters(summary, img_list, s_file, q_file, nbrs):
-    data_quality, data_similarity = format_data(s_file, q_file, nbrs)
+def update_parameters(s, lst, s_file, q_file):
+    data_quality, data_similarity = format_data(s_file, q_file)
     weights = load_weights()
     old_weights = weights.tolist()
 
     results = []
-    for i,img in enumerate(img_list):
-        if img in summary:
+    for i, img in enumerate(lst):
+        if img in s:
             results.append(1)
         else:
             results.append(0)
@@ -103,7 +101,7 @@ def update_parameters(summary, img_list, s_file, q_file, nbrs):
 
     change = 0
     momentum = 0.9
-    lr = torch.asarray([0.1, 0.1, 0.5, 0.5])
+    lr = torch.asarray([0.01, 0.01, 0.015, 0.015])
     best_loss = 1e10
     best_weights = []
     for i in range(1000):
@@ -130,17 +128,5 @@ def update_parameters(summary, img_list, s_file, q_file, nbrs):
             weights[3] = max(weights[3], 0)
         weights.grad.zero_()
 
-    new_weights = (0.2 * best_weights) + (0.8 * torch.asarray(old_weights))
+    new_weights = (0.5 * best_weights) + (0.5 * torch.asarray(old_weights))
     save_weights(new_weights.tolist())
-
-
-def get_class_weights(results):
-    true_samples = 0
-    false_samples = 0
-    for result in results:
-        if result == 1:
-            true_samples += 1
-        else:
-            false_samples += 1
-    class_weights = [len(results) / true_samples, len(results) / false_samples]
-    return class_weights

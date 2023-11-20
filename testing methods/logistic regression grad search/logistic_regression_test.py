@@ -1,35 +1,19 @@
 __author__ = 'Lukáš Bartůněk'
 
 import torch
-from utils import prepare_img_list
 import json
 import operator
 import matplotlib.pyplot as plt
 
-img_lists = [0, 0, 0, 0, 0]
-res_lists = [0, 0, 0, 0, 0]
+
 names = ["Sossusvlei", "WalvisBay", "Etosha", "Chobe", "VictoriaFalls"]
 
-img_lists[0], _ = prepare_img_list("images/kybic_photos/originals/Sossusvlei")
-img_lists[1], _ = prepare_img_list("images/kybic_photos/originals/WalvisBay")
-img_lists[2], _ = prepare_img_list("images/kybic_photos/originals/Etosha")
-img_lists[3], _ = prepare_img_list("images/kybic_photos/originals/Chobe")
-img_lists[4], _ = prepare_img_list("images/kybic_photos/originals/VictoriaFalls")
+with open('img_lists.json') as json_file:
+    img_lists = json.load(json_file)
 
-res_lists[0], _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_1_Sossusvlei")
-res_lists[1], _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_2_WalvisBay")
-res_lists[2], _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_3_Etosha")
-res_lists[3], _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_4_Chobe")
-res_lists[4], _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_5_VictoriaFalls")
+with open('res_lists.json') as json_file:
+    res_lists = json.load(json_file)
 
-
-for i, img_list in enumerate(img_lists):
-    for j, img in enumerate(img_list):
-        img_list[j] = img.split("/")[-1]
-
-for i, img_list in enumerate(res_lists):
-    for j, img in enumerate(img_list):
-        img_list[j] = img.split("/")[-1]
 
 train_data = []
 train_data_sim = []
@@ -42,9 +26,8 @@ test_data_sim = []
 test_results = []
 
 for i, img_list in enumerate(img_lists):
-    q_file = "data/image_quality_" + names[i] + ".json"
-    s_file = "data/image_similarity_" + names[i] + ".json"
-    sim_scores = []
+    q_file = "image_quality_" + names[i] + ".json"
+    s_file = "image_similarity_" + names[i] + ".json"
     with open(q_file) as f:
         q_data = json.load(f)
     q_list = sorted(q_data, key=operator.itemgetter("id"))
@@ -53,59 +36,55 @@ for i, img_list in enumerate(img_lists):
         s_data = json.load(f)
     s_list = sorted(s_data, key=operator.itemgetter("first_id"))
 
-    last_id = -1
-    sim_scores = []
+    max_nbrs = 20
+    last_id = - 1
+    data_sim = []
     for s in s_list:
         if not s["first_id"] == last_id:
-            sim_scores.append([])
-            if s["first_id"] < 5:
-                sim_scores[s["first_id"]].append([0, 0, 0, 0])
-            if s["first_id"] < 4:
-                sim_scores[s["first_id"]].append([0, 0, 0, 0])
-            if s["first_id"] < 3:
-                sim_scores[s["first_id"]].append([0, 0, 0, 0])
-            if s["first_id"] < 2:
-                sim_scores[s["first_id"]].append([0, 0, 0, 0])
-            if s["first_id"] < 1:
-                sim_scores[s["first_id"]].append([0, 0, 0, 0])
+            data_sim.append([])
+            spaces = max_nbrs - s["first_id"]
+            while spaces > 0:
+                data_sim[s["first_id"]].append([0, 0, 0, 0])
+                spaces -= 1
             if not last_id == -1:
-                while len(sim_scores[last_id]) < 10:
-                    sim_scores[last_id].append([0, 0, 0, 0])
+                while len(data_sim[last_id]) < max_nbrs * 2:
+                    data_sim[last_id].append([0, 0, 0, 0])
             last_id = s["first_id"]
+        second_img_score = [0, 0]
         for q in q_list:
             if q["id"] == s["second_id"]:
                 second_img_score = [q["aesthetic_quality"], q["technical_quality"]]
-        sim_scores[last_id].append(
+        data_sim[last_id].append(
             [second_img_score[0], second_img_score[1], s["feature_similarity_score"], s["content_similarity_score"]])
-    while len(sim_scores[last_id]) < 10:
-        sim_scores[last_id].append([0, 0, 0, 0])
+    while len(data_sim[last_id]) < max_nbrs * 2:
+        data_sim[last_id].append([0, 0, 0, 0])
 
     for j, img in enumerate(img_list):
         if img in res_lists[i]:
             if i == 4:
                 test_data.append((q_list[j]["aesthetic_quality"], q_list[j]["technical_quality"]))
-                test_data_sim.append(sim_scores[j])
+                test_data_sim.append(data_sim[j])
                 test_results.append(1)
             elif i == 1:
                 validate_data.append((q_list[j]["aesthetic_quality"], q_list[j]["technical_quality"]))
-                validate_data_sim.append(sim_scores[j])
+                validate_data_sim.append(data_sim[j])
                 validate_results.append(1)
             else:
                 train_data.append((q_list[j]["aesthetic_quality"], q_list[j]["technical_quality"]))
-                train_data_sim.append(sim_scores[j])
+                train_data_sim.append(data_sim[j])
                 train_results.append(1)
         else:
             if i == 4:
                 test_data.append((q_list[j]["aesthetic_quality"], q_list[j]["technical_quality"]))
-                test_data_sim.append(sim_scores[j])
+                test_data_sim.append(data_sim[j])
                 test_results.append(0)
             elif i == 1:
                 validate_data.append((q_list[j]["aesthetic_quality"], q_list[j]["technical_quality"]))
-                validate_data_sim.append(sim_scores[j])
+                validate_data_sim.append(data_sim[j])
                 validate_results.append(0)
             else:
                 train_data.append((q_list[j]["aesthetic_quality"], q_list[j]["technical_quality"]))
-                train_data_sim.append(sim_scores[j])
+                train_data_sim.append(data_sim[j])
                 train_results.append(0)
 
 
@@ -128,19 +107,15 @@ for result in train_results:
         true_samples += 1
     else:
         false_samples += 1
-class_weights_train = [len(train_results) / true_samples, len(train_results) / false_samples]
+class_weights_train = [len(train_results) / (true_samples*2), len(train_results) / (false_samples*2)]
 
 
 def forward(x, s, w):
     ui = (x[0] * (1 - (w[0]/100)) + x[1] * (w[0]/100))
     uj = (s[0] * (1 - (w[0]/100)) + s[1] * (w[0]/100))
-    si = (s[2] * (1 - (w[2]/100)) + s[3] * (w[2]/100))
-    temp1 = torch.sigmoid(w[3] - si)
-    temp2 = torch.sigmoid(ui - uj)  # Ui > Uj ?
-    temp4 = 1 - (1-((1 - temp1) * temp2)) * (1-temp1)
-    temp5 = torch.prod(temp4, dim=0)
+    sij = (s[2] * (1 - (w[2]/100)) + s[3] * (w[2]/100))
 
-    p = torch.sigmoid(ui - w[1]) * temp5
+    p = torch.sigmoid(ui - w[1]) * torch.prod(1 - torch.sigmoid(sij - w[3]) * torch.sigmoid(uj - ui), dim=0)
     return p
 
 
@@ -151,16 +126,18 @@ def loss_fun(y, y_pred, c_w):
 
 
 # t_a_r, q_t, f_c_r, s_t
-weights = torch.tensor([40, 65, 60, 20], requires_grad=True, dtype=torch.double)
+weights = torch.tensor([50, 50, 50, 50], requires_grad=True, dtype=torch.double)
 
 loss_BGD = []
 
-change = 0
+change = 1
 momentum = 0.9
-lr = torch.asarray([0.1, 0.1, 0.5, 0.5])
+lr = torch.asarray([0.01, 0.01, 0.05, 0.05])
 best_loss = 1e10
 best_weights = []
-for i in range(5000):
+best_epoch = 0
+eps = 1e-20
+for i in range(10000):
     pred = forward(train_data, train_data_sim, weights)
     loss = loss_fun(train_results, pred, class_weights_train)
     loss_BGD.append(loss.item())
@@ -196,35 +173,20 @@ for i in range(5000):
 print("TRAIN LOSS:", best_loss, best_epoch,
       [best_weights[0].item(), best_weights[1].item(), best_weights[2].item(), best_weights[3].item()])
 
-plt.plot(loss_BGD, label="Batch Gradient Descent")
+plt.plot(loss_BGD, label="Batch gradient descent")
 plt.xlabel('Epoch')
 plt.ylabel('Cost/Total loss')
 plt.legend()
 plt.show()
 
-# test_data = torch.asarray([50, 50])
-# test_data_sim = torch.asarray([
-#     [[100, 100, 100,   100], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-#     [[  0,   0, 100,   100], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-#     [[100, 100, 100,     0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-#     [[  0,   0, 100,     0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-#     [[100, 100,   0,   100], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-#     [[  0,   0,   0,   100], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-#     [[100, 100,   0,     0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-#     [[  0,   0,   0,     0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-#     ])
-# test_data_sim = torch.transpose(torch.asarray(test_data_sim), 0, 2)
-# best_weights = torch.asarray([50,50,50,50])
-
-
 true_samples = 0
 false_samples = 0
 for result in test_results:
     if result == 1:
-        true_samples+=1
+        true_samples += 1
     else:
-        false_samples+=1
-class_weights_test = [len(test_results) / true_samples,len(test_results) / false_samples]
+        false_samples += 1
+class_weights_test = [len(test_results) / (true_samples*2), len(test_results) / (false_samples*2)]
 
 pred = forward(test_data, test_data_sim, best_weights)
 loss = loss_fun(test_results, pred, class_weights_test)

@@ -75,7 +75,7 @@ f = np.asarray(f)
 g = np.asarray(g)
 j = np.asarray(j)
 
-with open('../grid search results/4D_run.txt', 'w') as file:
+with open('../../grid search results/4D_run.txt', 'w') as file:
     file.write(str(a))
     file.write('\n\n')
     file.write(str(-f))

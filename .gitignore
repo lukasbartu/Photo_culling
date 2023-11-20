@@ -4,3 +4,6 @@ images/
 jupyter_logs
 Selected images
 grid search results
+generate_training_data nn.py
+*checkpoint*
+
