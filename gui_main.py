@@ -237,6 +237,10 @@ try:
             print("Quality calculated")
             window.Refresh() if window else None
             print("Creating content description...", end="   ")
+            if not os.path.exists(c_path):
+                recalc = True
+            else:
+                recalc = values["-RECALC"]
             window.Refresh() if window else None
             window.perform_long_operation(lambda: calculate_content(lst=img_list, result_pth=c_path)
                                           , end_key="-CON_DONE")
@@ -245,7 +249,6 @@ try:
             print("Content description created")
             window.Refresh() if window else None
             nbrs = int(values["-NBRS"])
-            recalc = values["-RECALC"]
             window.Refresh() if window else None
             print("Calculating similarities...", end="   ")
             window.Refresh() if window else None
