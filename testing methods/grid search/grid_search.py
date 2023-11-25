@@ -1,11 +1,13 @@
 __author__ = 'Lukáš Bartůněk'
 
 from summary_creation import select_summary
-from utils import prepare_img_list
+from utils import remove_folder_name
 import numpy as np
 from scipy.optimize import brute
 from scipy import optimize
 import matplotlib.pyplot as plt
+import json
+
 
 def num_common_elements(list1, list2):
     result = []
@@ -15,86 +17,94 @@ def num_common_elements(list1, list2):
             result.append(element)
     return len(result)
 
-def evaluate_parameters(params,*args):
-    sim_paths, q_paths, img_nums, res_lists = args
-    res_list1, _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_1_Sossusvlei")
-    res_list2, _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_2_WalvisBay")
-    res_list3, _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_3_Etosha")
-    res_list4, _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_5_VictoriaFalls")
-    res_lists = [res_list1, res_list2, res_list3, res_list4]
-    s_t,q_t,t_a_r= params
-    percentage = 0
-    summary = [0,0,0,0]
-    f1_list = [0,0,0,0]
-    for i,s in enumerate(summary):
-        temp = select_summary(sim_pth=sim_paths[i], q_pth=q_paths[i], num=img_nums[i],
-                             s_t=s_t, t_a_r=t_a_r, q_cutoff=q_t,selection=False,percent=percentage)
 
-        true_positive = num_common_elements(temp, res_lists[i])
-        false_positive = len(temp) - true_positive
-        false_negative = len(res_lists[i]) - true_positive
+with open('res_lists.json') as json_file:
+    res_lists = json.load(json_file)
 
-        if not true_positive == 0:
-            precision = true_positive / (true_positive + false_positive)
-            recall = true_positive / (true_positive + false_negative)
+r_lst = []
+for r in res_lists:
+    r_lst += r
 
-            f1_list[i] = (2 * precision * recall) / (precision + recall)
-        else:
-            f1_list[i] = 0
+s_file = "image_similarity_originals.json"
+q_file = "image_quality_originals.json"
 
-    f1 = sum(f1_list)/len(f1_list)  # average f1 for training summaries
-    return -f1
+q_range = [0, 101, 10, 100]
+s_range = [0, 101, 10, 100]
+tar_range = [0, 101, 10, 100]
+scr_range = [0, 101, 10, 100]
+q = 50
+t = 50
+s = 50
+c = 50
+best_f1 = 0
+best_p = [0, 0, 0, 0]
 
-params = (slice(0, 101, 10), slice(0, 101, 10), slice(0, 101, 10))
+for i in range(5):
+    qt = np.arange(q_range[0], q_range[1], q_range[2])
+    st = np.arange(s_range[0], s_range[1], s_range[2])
+    tar = np.arange(tar_range[0], tar_range[1], tar_range[2])
+    scr = np.arange(scr_range[0], scr_range[1], scr_range[2])
+    for t in tar:
+        summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
+                                 s_t=s, t_a_ratio=t, q_cutoff=q)
 
-sim_paths = ["data/image_similarity_Sossusvlei.json","data/image_similarity_WalvisBay.json","data/image_similarity_Etosha.json","data/image_similarity_VictoriaFalls.json"]
-q_paths = ["data/image_quality_Sossusvlei.json","data/image_quality_WalvisBay.json","data/image_quality_Etosha.json","data/image_quality_VictoriaFalls.json"]
-img_lists = [0,0,0,0]
-img_nums = [0,0,0,0]
+        true_positive = num_common_elements(summary, r_lst)
+        false_positive = len(summary) - true_positive
+        false_negative = len(r_lst) - true_positive
+        f1 = (2 * true_positive) / (2 * true_positive + false_positive + false_negative)
+        if f1 > best_f1:
+            best_f1 = f1
+            best_t = t
+        print("Q", q, "S", s, "T", t, "F1", f1)
+    t = best_t
+    for q in qt:
+        summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
+                                 s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
 
-img_lists[0],img_nums[0] = prepare_img_list("/home/lukas/Bakalářka/photo_culling/images/kybic_photos/originals/Sossusvlei")
-img_lists[1],img_nums[1] = prepare_img_list("/home/lukas/Bakalářka/photo_culling/images/kybic_photos/originals/WalvisBay")
-img_lists[2],img_nums[2] = prepare_img_list("/home/lukas/Bakalářka/photo_culling/images/kybic_photos/originals/Etosha")
-img_lists[3],img_nums[3] = prepare_img_list("/home/lukas/Bakalářka/photo_culling/images/kybic_photos/originals/VictoriaFalls")
+        true_positive = num_common_elements(summary, r_lst)
+        false_positive = len(summary) - true_positive
+        false_negative = len(r_lst) - true_positive
+        f1 = (2 * true_positive) / (2 * true_positive + false_positive + false_negative)
+        if f1 > best_f1:
+            best_f1 = f1
+            best_q = q
+        print("Q", q, "S", s, "T", t, "C", c, "F1", f1)
+    q = best_q
+    for c in tar:
+        summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
+                                 s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
 
-res_list1, _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_1_Sossusvlei")
-res_list2, _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_2_WalvisBay")
-res_list3, _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_3_Etosha")
-res_list4, _ = prepare_img_list("images/kybic_photos/corrected/281_namibie/Namibia2019_5_VictoriaFalls")
-res_lists = [res_list1,res_list2,res_list3,res_list4]
+        true_positive = num_common_elements(summary, r_lst)
+        false_positive = len(summary) - true_positive
+        false_negative = len(r_lst) - true_positive
+        f1 = (2 * true_positive) / (2 * true_positive + false_positive + false_negative)
+        if f1 > best_f1:
+            best_f1 = f1
+            best_c = c
+        print("Q", q, "S", s, "T", t, "C", c, "F1", f1)
+    c = best_c
+    for s in st:
+        summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
+                                 s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
 
-for lst in res_lists:
-    for i, res in enumerate(lst):
-        lst[i] = res.split("/")[-1]
+        true_positive = num_common_elements(summary, r_lst)
+        false_positive = len(summary) - true_positive
+        false_negative = len(r_lst) - true_positive
+        f1 = (2 * true_positive) / (2 * true_positive + false_positive + false_negative)
+        if f1 > best_f1:
+            best_f1 = f1
+            best_s = s
+        print("Q", q, "S", s, "T", t, "C", c, "F1", f1)
+    s = best_s
 
-a,f,g,j = brute(func=evaluate_parameters,ranges=params,full_output = True,workers=-1, finish=optimize.fmin,
-                args=tuple([sim_paths,q_paths,img_nums,res_lists]))
-
-a = np.asarray(a)
-f = np.asarray(f)
-g = np.asarray(g)
-j = np.asarray(j)
-
-with open('../../grid search results/4D_run.txt', 'w') as file:
-    file.write(str(a))
-    file.write('\n\n')
-    file.write(str(-f))
-    file.write('\n\n')
-    file.write(str(g))
-    file.write('\n\n')
-    file.write(str(-j))
-
-fig = plt.figure(figsize = (10,10))
-ax = fig.add_subplot(111, projection='3d')
-
-# Set axes label
-ax.set_xlabel('S_T', labelpad=20)
-ax.set_ylabel('Q_T', labelpad=20)
-ax.set_zlabel('T_A_R', labelpad=20)
-
-img = ax.scatter(g[0], g[1], g[2], c=-j, cmap=plt.cm.cividis)
-fig.colorbar(img)
-
-#surf = ax.plot_surface(g[0],g[1],-j, cmap = plt.cm.cividis)
-
-plt.show()
+    best_p = [best_q, best_s, best_t, best_c]
+    print("BEST PARS:", best_p)
+    size = [q_range[3], s_range[3], tar_range[3]]
+    q_range =   [max(best_p[0] - size[0]/10, 0), min(best_p[0] + size[0]/10, 100), size[0] / 100, min(best_p[0] + size[0]/10, 100) - max(best_p[0] - size[0]/10, 0)]
+    s_range =   [max(best_p[1] - size[1]/10, 0), min(best_p[1] + size[1]/10, 100), size[1] / 100, min(best_p[1] + size[1]/10, 100) - max(best_p[1] - size[1]/10, 0)]
+    tar_range = [max(best_p[2] - size[2]/10, 0), min(best_p[2] + size[2]/10, 100), size[2] / 100, min(best_p[2] + size[2]/10, 100) - max(best_p[2] - size[2]/10, 0)]
+    scr_range = [max(best_p[3] - size[3]/10, 0), min(best_p[3] + size[3]/10, 100), size[3] / 100, min(best_p[3] + size[3]/10, 100) - max(best_p[3] - size[3]/10, 0)]
+    print("!!!RANGES!!!")
+    print(q_range)
+    print(s_range)
+    print(tar_range)

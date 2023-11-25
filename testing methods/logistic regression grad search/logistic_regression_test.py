@@ -6,7 +6,7 @@ import operator
 import matplotlib.pyplot as plt
 
 
-names = ["Sossusvlei", "WalvisBay", "Etosha", "Chobe", "VictoriaFalls"]
+names = ["Sossusvlei", "WalvisBay", "Etosha", "Chobe", "VictoriaFalls", "Lisbon"]
 
 with open('img_lists.json') as json_file:
     img_lists = json.load(json_file)
@@ -125,8 +125,8 @@ def loss_fun(y, y_pred, c_w):
                       (c_w[1] * (1 - y) * (torch.log(1 - y_pred + eps)))) / len(y)
 
 
-# t_a_r, q_t, f_c_r, s_t
-weights = torch.tensor([50, 50, 50, 50], requires_grad=True, dtype=torch.double)
+# t_a_r, q_t, s_c_r, s_t
+weights = torch.tensor([00, 00, 00, 00], requires_grad=True, dtype=torch.double)
 
 loss_BGD = []
 
@@ -137,7 +137,7 @@ best_loss = 1e10
 best_weights = []
 best_epoch = 0
 eps = 1e-20
-for i in range(10000):
+for i in range(1):
     pred = forward(train_data, train_data_sim, weights)
     loss = loss_fun(train_results, pred, class_weights_train)
     loss_BGD.append(loss.item())

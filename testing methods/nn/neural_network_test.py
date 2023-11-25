@@ -56,7 +56,6 @@ for result in train_results:
         false_samples += 1
 class_weights = [ (1 / true_samples) * (len(train_results) / 2.0) , (1 / false_samples) * (len(train_results) / 2.0)]
 
-
 history = model.fit(train_data, train_results, epochs=300, validation_data=(validate_data, validate_results),
                     class_weight={0: class_weights[1], 1: class_weights[0]})
 

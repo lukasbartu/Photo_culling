@@ -3,6 +3,7 @@ __author__ = 'Lukáš Bartůněk'
 import os
 import natsort
 import pathlib
+import shutil
 
 
 def prepare_paths(pth, abs_p=False):
@@ -46,6 +47,15 @@ def get_class_weights(results):
     class_weights = [ (1 / true_samples) * (len(results) / 2.0) , (1 / false_samples) * (len(results) / 2.0)]
     return class_weights
 
+
+def load_trained():
+    with open('data/recommended_parameters.txt', 'r') as file:
+        data = file.readline()
+        data = data.split("|")
+        q_t, s_t, t_weight, s_c , percentage = data
+    return float(q_t), float(s_t), float(t_weight), float(s_c), float(percentage)
+
+
 def get_sim_window(s_lst):
     first_id =  s_lst[0]["first_id"]
     n = 0
@@ -54,3 +64,20 @@ def get_sim_window(s_lst):
         if l["first_id"] == first_id:
             n+=1
     return n
+
+
+def copy_images(summary, folder, dest_folder):
+    folder_name = folder.split("/")[-1]
+    save_folder = dest_folder + "/Selected summary " + folder_name
+    pathlib.Path(save_folder).mkdir(parents=True, exist_ok=True)
+    for img in summary:
+        shutil.copy2(os.path.join(folder, img), save_folder)
+
+
+def save_list(summary, folder, dest_folder):
+    folder_name = folder.split("/")[-1]
+    save_folder = dest_folder + "/Selected summary " + folder_name + ".txt"
+    with open(save_folder, "w") as file:
+        for img in summary:
+            file.write(img)
+            file.write(", ")

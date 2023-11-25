@@ -3,8 +3,8 @@ __author__ = 'Lukáš Bartůněk'
 import os
 import json
 import numpy as np
-import tensorflow as tf
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+import tensorflow as tf
 from keras import preprocessing
 from keras.applications.efficientnet_v2 import preprocess_input, EfficientNetV2B1
 

@@ -3,9 +3,10 @@ __author__ = 'Lukáš Bartůněk'
 import pyexiv2
 import operator
 import json
+from utils import prepare_img_list, prepare_paths
 
 
-def include_metadata_rating(img_list,q_file, t_a_ratio):
+def include_metadata_rating(img_list, q_file, t_a_ratio):
     t_a_ratio = t_a_ratio/100
     with open(q_file) as f:
         q_data = json.load(f)
@@ -15,7 +16,7 @@ def include_metadata_rating(img_list,q_file, t_a_ratio):
     highest_q = 0
     lowest_q = 100
     for q in q_list:
-        quality = q["aesthetic_quality"] * (1-t_a_ratio) +  q["technical_quality"] * t_a_ratio
+        quality = q["aesthetic_quality"] * (1-t_a_ratio) + q["technical_quality"] * t_a_ratio
         mixed_list.append(quality)
         if quality > highest_q:
             highest_q = quality
@@ -29,11 +30,9 @@ def include_metadata_rating(img_list,q_file, t_a_ratio):
         if rating == 6:
             rating = 5
         try:
-            metadata = pyexiv2.ImageMetadata(img)
-            metadata.read()
-            metadata['Exif.Image.Rating'] = pyexiv2.ExifTag('Exif.Image.Rating', rating)
-            metadata['Exif.Image.Rating'] = pyexiv2.ExifTag('Exif.Image.RatingPercent', rating_percent)
-            metadata.write()
+            with pyexiv2.Image(img) as handle:
+                meta = {'Exif.Image.Rating': rating,
+                        'Exif.Image.RatingPercent': rating_percent}
+                handle.modify_exif(meta)
         except:
-            pass
-
+            raise Exception

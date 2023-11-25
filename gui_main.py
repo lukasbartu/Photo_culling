@@ -5,8 +5,7 @@ from quality_assessment import calculate_qualities
 from similarity_assessment import calculate_similarities
 from content_assessment import calculate_content
 from summary_creation import select_summary
-from utils import prepare_paths, prepare_img_list, remove_folder_name
-from training_parameters import load_trained
+from utils import prepare_paths, prepare_img_list, remove_folder_name, copy_images, save_list, load_trained
 import logistic_regression
 import neural_network
 
@@ -19,6 +18,7 @@ import base64
 import natsort
 import pathlib
 import shutil
+
 
 # PysimpleGUI demo
 class BtnInfo:
@@ -83,15 +83,22 @@ def make_win1():
         [
             sg.Push(),
             sg.Text("Similarity threshold"),
-            sg.Slider((0, 50), orientation='h', s=(10, 15), default_value=10, resolution=2, tooltip="Recommended: 10",
+            sg.Slider((0, 50), orientation='h', s=(10, 15), default_value=10, resolution=2,
                       key="-S_T"),
             sg.Push()
         ], [
             sg.Push(),
             sg.Text("Aesthetic quality "),
-            sg.Slider((0, 100), orientation='h', s=(10, 15), default_value=50, resolution=2, tooltip="Recommended: 50%",
+            sg.Slider((0, 100), orientation='h', s=(10, 15), default_value=50, resolution=2,
                       key="-T_A_RATIO"),
             sg.Text("Technical quality "),
+            sg.Push(),
+        ], [
+            sg.Push(),
+            sg.Text("Structural similarity "),
+            sg.Slider((0, 100), orientation='h', s=(10, 15), default_value=50, resolution=2,
+                      key="-S_C_RATIO"),
+            sg.Text("Content similarity"),
             sg.Push(),
         ],
         [sg.HSeparator(), ],
@@ -99,13 +106,13 @@ def make_win1():
             sg.Push(),
             sg.Text("Selection based on:"),
             sg.Push(),
-            sg.Button('Output size', size=(10, 2), button_color='white on green', key='-B-'),
+            sg.Button('Output size', size=(10, 2), button_color='white on green', key='-SELECTION_MODE'),
             sg.Push()
         ], [
             sg.Push(),
             sg.Text("Output size in percents"),
             sg.Push(),
-            sg.Slider((0, 100), orientation='h', s=(10, 15), default_value=10, resolution=2, tooltip="Recommended: 10%",
+            sg.Slider((0, 100), orientation='h', s=(10, 15), default_value=10, resolution=2,
                       key="-SIZE"),
             sg.Push(),
         ], [
@@ -122,12 +129,9 @@ def make_win1():
             sg.Push(),
         ], [
             sg.Push(),
-            sg.Button("Use selected parameters", key="-SUMM_MAN", size=(40, 1)),
+            sg.Button("Selected parameters", key="-SUMM_MAN", size=(20, 1)),
+            sg.Button("Preset parameters", key="-SUMM_REC", size=(20, 1)),
             sg.Push(),
-        ], [
-            sg.Push(),
-            sg.Button("Use recommended parameters", key="-SUMM_REC", size=(40, 1)),
-            sg.Push()
         ], [
             sg.Push(),
             sg.Button("Automatic summary using logistic regression", key="-SUMM_AUTO_REG",
@@ -141,6 +145,7 @@ def make_win1():
         ],
         [sg.HSeparator(), ],
         [
+            sg.Checkbox("Write metadata", key="-METADATA", enable_events=True, default=True),
             sg.Push(),
             sg.Checkbox("Use graphics card if possible", key="-CUDA", enable_events=True, default=True)
         ], [
@@ -170,7 +175,9 @@ def make_win2():
             sg.Button("Update parameters for automatic selection", key="-UPDATE_PARA", size=(20, 2)),
             sg.In(key="-COPY", visible=False, enable_events=True),
             sg.FolderBrowse("Copy selection into folder", size=(15, 2)),
-            sg.Button("Exit", key="-EXIT", size=(10, 2)),
+            sg.In(key="-OUT_LIST", visible=False, enable_events=True),
+            sg.FolderBrowse("Save selected list", size=(15, 2)),
+            sg.Button("Close", key="-EXIT", size=(10, 2)),
         ]
     ]
     return sg.Window("Selection window", layout, finalize=True)
@@ -205,22 +212,39 @@ try:
             folder = values["-FOLDER-"]
             _, sim_path, q_path, c_path = prepare_paths(folder, abs_p=True)
             img_list, img_num = prepare_img_list(folder)
-        if event == '-B-':
+
+        if event == '-SELECTION_MODE':
             selection = not selection
-            window['-B-'].update(text='Output size' if selection else 'Quality threshold',
+            window['-SELECTION_MODE'].update(text='Output size' if selection else 'Quality threshold',
                                  button_color='white on green' if selection else 'white on blue')
         if event == "-SUMM_REC" or event == "-SUMM_AUTO_REG" or event == "-SUMM_MAN" or event == "-SUMM_AUTO_NN":
-            if event == "-SUMM_REC":
+            if event == "-SUMM_MAN":
                 size = values["-SIZE"]
                 s_t = values["-S_T"]
                 t_a_ratio = values["-T_A_RATIO"] / 100
+                s_c_ratio = values["-S_C_RATIO"] / 100
                 q_t = values["-QUALITY_CUTOFF"]
-            elif event == "-SUMM_MAN":
-                q_t, s_t, t_a_ratio, size = load_trained()
+            elif event == "-SUMM_REC":
+                q_t, s_t, t_a_ratio, s_c_ratio, size = load_trained()
+                window["-SIZE"].update(value=size)
+                window["-S_T"].update(value=s_t)
+                window["-T_A_RATIO"].update(value=t_a_ratio)
+                window["-S_C_RATIO"].update(value=s_c_ratio)
+                window["-QUALITY_CUTOFF"].update(value=q_t)
+                window.refresh()
+                t_a_ratio = t_a_ratio / 100
+                s_c_ratio = s_c_ratio / 100
             elif event == "-SUMM_AUTO_REG":
                 auto_summ_reg = True
+                selection = not selection
+                window['-SELECTION_MODE'].update(text='Output size' if selection else 'Quality threshold',
+                                                 button_color='white on green' if selection else 'white on blue')
             elif event == "-SUMM_AUTO_NN":
                 auto_summ_nn = True
+                selection = not selection
+                window['-SELECTION_MODE'].update(text='Output size' if selection else 'Quality threshold',
+                                                 button_color='white on green' if selection else 'white on blue')
+                window.refresh()
             if not folder:
                 sg.popup("No folder selected")
             else:
@@ -242,7 +266,7 @@ try:
             else:
                 recalc = values["-RECALC"]
             window.Refresh() if window else None
-            window.perform_long_operation(lambda: calculate_content(lst=img_list, result_pth=c_path)
+            window.perform_long_operation(lambda: calculate_content(lst=img_list, result_pth=c_path, cuda=cuda)
                                           , end_key="-CON_DONE")
 
         elif event == "-CON_DONE" and summ_create:
@@ -271,15 +295,17 @@ try:
                 t_a_ratio = 50
             else:
                 summary = select_summary(sim_pth=sim_path, q_pth=q_path, size=size, num=img_num,
-                                         s_t=s_t, t_a_ratio= t_a_ratio, selection=selection, q_cutoff= q_t)
+                                         s_t=s_t, t_a_ratio=t_a_ratio, s_c_ratio=s_c_ratio, selection=selection,
+                                         q_cutoff= q_t)
             print("Summary calculated")
             window.Refresh() if window else None
 
-            print("Writing metadata...", end="   ")
-            window.Refresh() if window else None
-            include_metadata_rating(img_list=img_list, q_file=q_path, t_a_ratio=t_a_ratio)
-            print("Metadata written")
-            window.Refresh() if window else None
+            if values["-METADATA"]:
+                print("Writing metadata...", end="   ")
+                window.Refresh() if window else None
+                include_metadata_rating(img_list=img_list, q_file=q_path, t_a_ratio=t_a_ratio)
+                print("Metadata written")
+                window.Refresh() if window else None
 
             summary = remove_folder_name(summary, folder)
             img_list_removed = remove_folder_name(img_list, folder)
@@ -334,11 +360,9 @@ try:
             except Exception:
                 pass
         if event == "-COPY":
-            folder_name = folder.split("/")[-1]
-            save_folder = values["-COPY"] + "/Selected summary " + folder_name
-            pathlib.Path(save_folder).mkdir(parents=True, exist_ok=True)
-            for img in summary:
-                shutil.copy2(os.path.join(folder, img), save_folder)
+            copy_images(summary=summary, folder=folder, dest_folder=values["-COPY"])
+        if event == "-OUT_LIST":
+            save_list(summary=summary, folder=folder, dest_folder=values["-OUT_LIST"])
         if event == "-UPDATE_PARA":
             if len(summary) == 0:
                 sg.popup("Empty summary")
