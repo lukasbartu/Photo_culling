@@ -6,16 +6,12 @@ import pathlib
 import shutil
 
 
-def prepare_paths(pth, abs_p=False):
-    if abs_p:
-        abs_pth = pth
-    else:
-        abs_pth = os.getcwd() + pth  # absolute file of image directory
-    folder_name = abs_pth.split("/")[-1]  # name of most nested folder for better naming of resulting files
+def prepare_paths(pth):
+    folder_name = pth.split("/")[-1]  # name of most nested folder for better naming of resulting files
     sim_path = "data/image_similarity_" + folder_name + ".json"  # file to save result of precalculating similarities
     q_path = "data/image_quality_" + folder_name + ".json"  # file to save result of quality evaluation
     content_path = "data/image_content_" + folder_name + ".json"  # file to save result of image content evaluation
-    return abs_pth, sim_path, q_path, content_path
+    return sim_path, q_path, content_path
 
 
 def prepare_img_list(pth):
@@ -52,8 +48,8 @@ def load_trained():
     with open('data/recommended_parameters.txt', 'r') as file:
         data = file.readline()
         data = data.split("|")
-        q_t, s_t, t_weight, s_c , percentage = data
-    return float(q_t), float(s_t), float(t_weight), float(s_c), float(percentage)
+        q_t, s_t, t_a_ratio, s_c_ratio , size = data
+    return float(q_t), float(s_t), float(t_a_ratio), float(s_c_ratio), float(size)
 
 
 def get_sim_window(s_lst):

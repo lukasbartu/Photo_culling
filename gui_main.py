@@ -6,18 +6,16 @@ from similarity_assessment import calculate_similarities
 from content_assessment import calculate_content
 from summary_creation import select_summary
 from utils import prepare_paths, prepare_img_list, remove_folder_name, copy_images, save_list, load_trained
+from metadata_creation import include_metadata_rating
 import logistic_regression
 import neural_network
 
-from metadata_creation import include_metadata_rating
 import time
 import os
 import PIL.Image
 import io
 import base64
 import natsort
-import pathlib
-import shutil
 
 
 # PysimpleGUI demo
@@ -210,7 +208,7 @@ try:
                 break
         if event == "-FOLDER-":
             folder = values["-FOLDER-"]
-            _, sim_path, q_path, c_path = prepare_paths(folder, abs_p=True)
+            sim_path, q_path, c_path = prepare_paths(folder)
             img_list, img_num = prepare_img_list(folder)
 
         if event == '-SELECTION_MODE':
@@ -254,8 +252,7 @@ try:
                 tic = time.perf_counter()
                 print("Calculating quality...", end="   ")
                 window.Refresh() if window else None
-                window.perform_long_operation(lambda: calculate_qualities(lst=img_list, result_pth=q_path,
-                                                                          model_pth="data/model.pth", cuda=cuda),
+                window.perform_long_operation(lambda: calculate_qualities(lst=img_list, result_pth=q_path, cuda=cuda),
                                               end_key="-QUA_DONE")
         elif event == "-QUA_DONE" and summ_create:
             print("Quality calculated")

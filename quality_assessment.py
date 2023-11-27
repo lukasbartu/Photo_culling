@@ -45,7 +45,8 @@ def prepare_model(model_pth, cuda=True):
     return model, device
 
 
-def calculate_qualities(lst, result_pth, model_pth, cuda=True):
+def calculate_qualities(lst, result_pth, cuda=True):
+    model_pth = "data/model.pth"
     if os.path.exists(result_pth):
         return
     obj = BRISQUE(url=False)

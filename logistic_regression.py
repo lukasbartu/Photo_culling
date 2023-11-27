@@ -67,7 +67,6 @@ def format_data(s_file, q_file):
     pad = (20 - nbrs)
     data_sim = np.asarray(data_sim)
     data_sim = np.pad(data_sim, ((0, 0), (pad, pad), (0, 0)))
-    print(data_sim.shape)
 
     data_q = []
     for q in q_list:
