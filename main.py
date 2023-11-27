@@ -5,7 +5,6 @@ __author__ = 'Lukáš Bartůněk'
 #
 # SIFT similarity is edited code taken from https://github.com/adumrewal/SIFTImageSimilarity/blob/master/SIFTSimilarityInteractive.ipynb
 # NIMA image quality is edited code taken from https://github.com/yunxiaoshi/Neural-IMage-Assessment
-# argument parser code taken from https://gitlab.fel.cvut.cz/kybicjan/fotoselektor
 
 from quality_assessment import calculate_qualities
 from similarity_assessment import calculate_similarities
