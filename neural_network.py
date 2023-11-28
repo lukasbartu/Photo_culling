@@ -7,7 +7,7 @@ import numpy as np
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import keras
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import EarlyStopping
 
 
 def format_data(s_file, q_file):
@@ -88,13 +88,10 @@ def update_model(s, lst, s_file, q_file):
     if len(s) == 0:
         return
     class_weights = get_class_weights(results)
-    best_checkpoint_path = "best_checkpoint_nn"
-    save_best_model = ModelCheckpoint(best_checkpoint_path, monitor='f1_score',
-                                      save_best_only=True, save_weights_only=True, mode="max")
 
     model.fit(data, results, epochs=100, class_weight={0: class_weights[1], 1: class_weights[0]},
-              callbacks=[save_best_model], verbose=False)
+              verbose=False, workers=-1)
 
-    model.save("data/best_nn_model.keras")
+    # model.save("data/best_nn_model.keras")
 
 

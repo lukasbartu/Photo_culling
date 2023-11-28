@@ -1,5 +1,6 @@
 __author__ = 'Lukáš Bartůněk'
 
+import numpy as np
 import pandas as pd
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -7,8 +8,8 @@ from keras.layers import Dense, Input, Dropout
 from keras import Sequential
 from keras.optimizers.experimental import RMSprop
 from keras.metrics import F1Score
-from keras.callbacks import ModelCheckpoint
 from matplotlib import pyplot as plt
+from keras.callbacks import EarlyStopping
 
 train_data = pd.read_csv("train_data.csv", header=None, on_bad_lines='skip')
 validate_data = pd.read_csv("validate_data.csv", header=None)
@@ -32,21 +33,6 @@ test_data = test_data.to_numpy()
 test_results = test_results.astype('float32')
 test_results = test_results.to_numpy()
 
-model = Sequential()
-model.add(Input((162,)))
-model.add(Dropout(0.5))
-model.add(Dense(80))
-model.add(Dropout(0.5))
-model.add(Dense(40))
-model.add(Dense(1, activation='sigmoid'))
-
-# best_checkpoint_path = "best_checkpoint_nn"
-#
-# save_best_model = ModelCheckpoint(best_checkpoint_path, monitor='val_f1_score',
-#                                   save_best_only=True, save_weights_only=True, mode="max")
-
-model.compile(optimizer=RMSprop(learning_rate=0.0001), loss="binary_crossentropy", metrics=F1Score(threshold=0.5))
-
 true_samples = 0
 false_samples = 0
 for result in train_results:
@@ -54,23 +40,64 @@ for result in train_results:
         true_samples += 1
     else:
         false_samples += 1
-class_weights = [ (1 / true_samples) * (len(train_results) / 2.0) , (1 / false_samples) * (len(train_results) / 2.0)]
+class_weights = [(1 / true_samples) * (len(train_results) / 2.0), (1 / false_samples) * (len(train_results) / 2.0)]
 
-history = model.fit(train_data, train_results, epochs=300, validation_data=(validate_data, validate_results),
-                    class_weight={0: class_weights[1], 1: class_weights[0]})
+true_samples = 0
+false_samples = 0
+for result in validate_results:
+    if result == 1:
+        true_samples += 1
+    else:
+        false_samples += 1
+class_weights_validate = np.asarray([(1 / true_samples) * (len(validate_results) / 2.0), (1 / false_samples) * (len(validate_results) / 2.0)])
+val_sample_weights = validate_results*class_weights_validate[0] + (1-validate_results)*class_weights_validate[1]
 
-# , callbacks=[save_best_model]
+true_samples = 0
+false_samples = 0
+for result in test_results:
+    if result == 1:
+        true_samples += 1
+    else:
+        false_samples += 1
+class_weights_test = [(1 / true_samples) * (len(test_results) / 2.0), (1 / false_samples) * (len(test_results) / 2.0)]
 
-plt.plot(history.history["loss"])
-plt.title('Model accuracy')
+model = Sequential()
+model.add(Input((162,)))
+model.add(Dropout(0.5))
+model.add(Dense(10))
+model.add(Dense(1, activation='sigmoid'))
+
+model.compile(optimizer=RMSprop(learning_rate=0.00001), loss="binary_crossentropy",
+              metrics=F1Score(threshold=0.5), weighted_metrics=[])
+
+history = model.fit(train_data, train_results, epochs=400, batch_size=10, workers=-1,
+                    validation_data=(validate_data, validate_results, val_sample_weights),
+                    class_weight={0: class_weights[1], 1: class_weights[0]},
+                    callbacks=[EarlyStopping(patience=100, restore_best_weights=True)])
+
+plt.plot(history.history["loss"], label="Training loss")
+plt.plot(history.history["val_loss"], label="Validation loss")
+
+plt.title('Neural network optimization')
 plt.ylabel('Cost/Total loss')
 plt.xlabel('Epoch')
-plt.legend(['Neural network optimization'], loc='upper right')
+plt.legend(loc='upper right')
+plt.savefig("NN_training.pdf", format="pdf", bbox_inches="tight")
 plt.show()
 
-# model.load_weights(best_checkpoint_path)
+plt.plot(np.arange(100, len(history.history["val_loss"])-1, 1), history.history["loss"][100:-1], label="Training loss")
+plt.plot(np.arange(100, len(history.history["val_loss"])-1, 1), history.history["val_loss"][100:-1], label="Validation loss")
 
-model.evaluate(test_data, test_results)
+plt.title('Close up of NN optimization')
+plt.ylabel('Cost/Total loss')
+plt.xlabel('Epoch')
+plt.legend(loc='upper right')
+plt.savefig("NN_training_close-up.pdf", format="pdf", bbox_inches="tight")
+plt.show()
+
+res = model.evaluate(test_data, test_results)
+with open('F1_score.txt', 'w') as file:
+    file.write(str(res[1]))
 
 model.save("best_nn_model.keras")
 
