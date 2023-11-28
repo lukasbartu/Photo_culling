@@ -133,12 +133,12 @@ def make_win1():
         ], [
             sg.Push(),
             sg.Button("Automatic summary using logistic regression", key="-SUMM_AUTO_REG",
-                      tooltip="Only selection based on quality", size=(40, 1)),
+                      tooltip="Only size based on quality", size=(40, 1)),
             sg.Push()
         ], [
             sg.Push(),
             sg.Button("Automatic summary using neural network", key="-SUMM_AUTO_NN",
-                      tooltip="Only selection based on quality", size=(40, 1)),
+                      tooltip="Only size based on quality", size=(40, 1)),
             sg.Push()
         ],
         [sg.HSeparator(), ],
@@ -212,9 +212,9 @@ try:
             img_list, img_num = prepare_img_list(folder)
 
         if event == '-SELECTION_MODE':
-            selection = not selection
-            window['-SELECTION_MODE'].update(text='Output size' if selection else 'Quality threshold',
-                                 button_color='white on green' if selection else 'white on blue')
+            size_based = not size_based
+            window['-SELECTION_MODE'].update(text='Output size' if size_based else 'Quality threshold',
+                                 button_color='white on green' if size_based else 'white on blue')
         if event == "-SUMM_REC" or event == "-SUMM_AUTO_REG" or event == "-SUMM_MAN" or event == "-SUMM_AUTO_NN":
             if event == "-SUMM_MAN":
                 size = values["-SIZE"]
@@ -234,14 +234,14 @@ try:
                 s_c_ratio = s_c_ratio / 100
             elif event == "-SUMM_AUTO_REG":
                 auto_summ_reg = True
-                selection = not selection
-                window['-SELECTION_MODE'].update(text='Output size' if selection else 'Quality threshold',
-                                                 button_color='white on green' if selection else 'white on blue')
+                size_based = False
+                window['-SELECTION_MODE'].update(text='Output size' if size_based else 'Quality threshold',
+                                                 button_color='white on green' if size_based else 'white on blue')
             elif event == "-SUMM_AUTO_NN":
                 auto_summ_nn = True
-                selection = not selection
-                window['-SELECTION_MODE'].update(text='Output size' if selection else 'Quality threshold',
-                                                 button_color='white on green' if selection else 'white on blue')
+                size_based = False
+                window['-SELECTION_MODE'].update(text='Output size' if size_based else 'Quality threshold',
+                                                 button_color='white on green' if size_based else 'white on blue')
                 window.refresh()
             if not folder:
                 sg.popup("No folder selected")
@@ -292,7 +292,7 @@ try:
                 t_a_ratio = 50
             else:
                 summary = select_summary(sim_pth=sim_path, q_pth=q_path, size=size, num=img_num,
-                                         s_t=s_t, t_a_ratio=t_a_ratio, s_c_ratio=s_c_ratio, selection=selection,
+                                         s_t=s_t, t_a_ratio=t_a_ratio, s_c_ratio=s_c_ratio, size_based=size_based,
                                          q_cutoff= q_t)
             print("Summary calculated")
             window.Refresh() if window else None

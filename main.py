@@ -31,7 +31,7 @@ def main(arg_list):
               "[Software only supports .jpg and .jpeg]")
         return 1
 
-    selection = arg_list.size_based_selection
+    size_based = arg_list.size_based_selection
     nbrs = max(min(arg_list.number_of_neighbours, 20), 0)
 
     if (arg_list.select_photos_man or arg_list.select_photos_recommended
@@ -58,13 +58,13 @@ def main(arg_list):
         if arg_list.select_photos_man or arg_list.select_photos_recommended:
             summary = select_summary(sim_pth=sim_path, q_pth=q_path, size=size, num=img_num, s_t=s_t,
                                      t_a_ratio=t_a_ratio,
-                                     selection=selection, q_cutoff=q_t, s_c_ratio=s_c_ratio)
+                                     size_based=size_based, q_cutoff=q_t, s_c_ratio=s_c_ratio)
+
         elif arg_list.select_photos_reg:
             summary = logistic_regression.summary(lst=img_list, s_file=sim_path, q_file=q_path)
             weights = logistic_regression.load_weights()
             t_a_ratio = weights[0].item()
         elif arg_list.select_photos_nn:
-            print("Selecting summary of photos")
             summary = neural_network.summary(lst=img_list, s_file=sim_path, q_file=q_path)
             t_a_ratio = 50
 

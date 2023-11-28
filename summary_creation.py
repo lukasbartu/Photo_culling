@@ -24,12 +24,12 @@ def update_scores(sim_data, image_scores, s_t, img, s_c_ratio):
             continue
         if (s_c_ratio * sim_data[i]["feature_similarity_score"] + (1-s_c_ratio) * sim_data[i]["content_similarity_score"]) >= s_t:
             i = sim_data[i]["second_id"]
-            image_scores[i].update({"score": -1})
+            image_scores[i].update({"score": 0.1})
     return image_scores
 
 
-def select_summary(sim_pth, q_pth, num, s_t, t_a_ratio, s_c_ratio, q_cutoff, size=10, selection=False):
-    if selection:
+def select_summary(sim_pth, q_pth, num, s_t, t_a_ratio, s_c_ratio, q_cutoff, size=10, size_based=False):
+    if size_based:
         select_num = int(num*(size/100))
     else:
         select_num = num
@@ -43,9 +43,9 @@ def select_summary(sim_pth, q_pth, num, s_t, t_a_ratio, s_c_ratio, q_cutoff, siz
             image_scores = update_scores(sim_data, image_scores, s_t, added_img, s_c_ratio)
         sorted_imgs = sorted(image_scores, key=operator.itemgetter("score"), reverse=True)
         added_img = sorted_imgs[0]
-        if not selection and (added_img["score"] < q_cutoff):
+        if not size_based and (added_img["score"] < q_cutoff):
             break
-        elif selection and added_img["score"] < 0:
+        elif size_based and added_img["score"] < 0:
             break
         image_scores[added_img["id"]].update({"score": -1})
         top_list.append(added_img["img"])
