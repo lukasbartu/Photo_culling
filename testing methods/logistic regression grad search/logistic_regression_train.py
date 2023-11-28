@@ -4,9 +4,10 @@ import torch
 import json
 import operator
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-names = ["Sossusvlei", "WalvisBay", "Etosha", "Chobe", "VictoriaFalls", "Lisbon"]
+names = ["Sossusvlei", "WalvisBay", "Etosha", "Chobe", "VictoriaFalls"]
 
 with open('img_lists.json') as json_file:
     img_lists = json.load(json_file)
@@ -109,6 +110,15 @@ for result in train_results:
         false_samples += 1
 class_weights_train = [len(train_results) / (true_samples*2), len(train_results) / (false_samples*2)]
 
+true_samples = 0
+false_samples = 0
+for result in validate_results:
+    if result == 1:
+        true_samples += 1
+    else:
+        false_samples += 1
+class_weights_validate= [len(validate_results) / (true_samples*2), len(validate_results) / (false_samples*2)]
+
 
 def forward(x, s, w):
     ui = (x[0] * (1 - (w[0]/100)) + x[1] * (w[0]/100))
@@ -126,25 +136,27 @@ def loss_fun(y, y_pred, c_w):
 
 
 # t_a_r, q_t, s_c_r, s_t
-weights = torch.tensor([00, 00, 00, 00], requires_grad=True, dtype=torch.double)
+weights = torch.tensor([5, 55, 90, 20], requires_grad=True, dtype=torch.double)
 
 loss_BGD = []
+loss_val = []
 
-change = 1
-momentum = 0.9
-lr = torch.asarray([0.01, 0.01, 0.05, 0.05])
+change = 0
+momentum = 0.7
+lr = torch.asarray([0.001, 0.001, 0.01, 0.01])
 best_loss = 1e10
-best_weights = []
+# best_weights = torch.tensor([5.0190735553839785, 54.9600518080562, 90.79135620039723, 15.250126458043551])
 best_epoch = 0
 eps = 1e-20
-for i in range(1):
+for i in range(3000):
     pred = forward(train_data, train_data_sim, weights)
     loss = loss_fun(train_results, pred, class_weights_train)
     loss_BGD.append(loss.item())
     loss.backward()
 
     pred_validate = forward(validate_data, validate_data_sim, weights)
-    loss_validate = loss_fun(train_results, pred, class_weights_train)
+    loss_validate = loss_fun(validate_results, pred_validate, class_weights_validate)
+    loss_val.append(loss_validate.item())
 
     print(i, loss.item(), loss_validate.item(),
           [weights[0].item(), weights[1].item(), weights[2].item(), weights[3].item()])
@@ -173,10 +185,26 @@ for i in range(1):
 print("TRAIN LOSS:", best_loss, best_epoch,
       [best_weights[0].item(), best_weights[1].item(), best_weights[2].item(), best_weights[3].item()])
 
-plt.plot(loss_BGD, label="Batch gradient descent")
+
+plt.plot(loss_BGD, label="Train loss")
+plt.plot(loss_val, label="Validation loss")
+plt.axvline(x=best_epoch, color="tab:red", ls="--", label="Best validation loss")
 plt.xlabel('Epoch')
-plt.ylabel('Cost/Total loss')
+plt.ylabel('Cost')
 plt.legend()
+plt.title("Batch gradient descent")
+plt.savefig("Log_reg.pdf", format="pdf", bbox_inches="tight")
+plt.show()
+
+# plt.plot(loss_BGD[best_epoch-20:best_epoch+21], label="Train loss")
+x_axis = np.arange(best_epoch-100,best_epoch+101,1)
+plt.plot(x_axis,loss_val[best_epoch-100:best_epoch+101], label="Validation loss", color="tab:orange")
+plt.axvline(x=best_epoch, color="tab:red", ls="--", label="Best validation loss")
+plt.xlabel('Epoch')
+plt.ylabel('Cost')
+plt.legend()
+plt.title("Validation loss close-up")
+plt.savefig("Log_reg_close-up.pdf", format="pdf", bbox_inches="tight")
 plt.show()
 
 true_samples = 0
@@ -199,16 +227,23 @@ false_positive = 0
 false_negative = 0
 true_num = 0
 false_num = 0
+class_threshold = 0.5
+positive = 0
+negative = 0
 with torch.no_grad():
 
     for i, p in enumerate(pred):
-        if p >= 0.5 and test_results[i].item() == 1:
+        if p >= class_threshold and test_results[i].item() == 1:
+            positive += 1
             true_positive += 1
-        elif p < 0.5 and test_results[i].item() == 0:
+        elif p < class_threshold and test_results[i].item() == 0:
+            negative += 1
             true_negative += 1
-        elif p >= 0.5 and test_results[i].item() == 0:
+        elif p >= class_threshold and test_results[i].item() == 0:
+            positive += 1
             false_positive += 1
         else:
+            negative += 1
             false_negative += 1
 
     if true_positive == 0:
