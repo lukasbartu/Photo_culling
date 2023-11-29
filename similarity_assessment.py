@@ -1,24 +1,30 @@
 __author__ = 'Lukáš Bartůněk'
 
-import cv2,os,json,operator
+import cv2
+import os
+import json
+import operator
 from scipy.spatial import distance
 
-sift = cv2.SIFT_create(1000) # SIFT algorithm with number of keypoints
-bf = cv2.BFMatcher() # keypoint matcher
+sift = cv2.SIFT_create(1000)  # SIFT algorithm with number of keypoints
+bf = cv2.BFMatcher()  # keypoint matcher
+
 
 def compute_SIFT(image):
     return sift.detectAndCompute(image, None)
 
+
 def image_resize(image):
     max_d = 1024
-    height,width,channel = image.shape
-    aspect_ratio = width/height
+    height, width, channel = image.shape
+    aspect_ratio = width / height
     if aspect_ratio < 1:
-        new_size = (int(max_d*aspect_ratio),max_d)
+        new_size = (int(max_d * aspect_ratio), max_d)
     else:
-        new_size = (max_d,int(max_d/aspect_ratio))
-    image = cv2.resize(image,new_size)
+        new_size = (max_d, int(max_d / aspect_ratio))
+    image = cv2.resize(image, new_size)
     return image
+
 
 def calculate_matches(des1, des2):
     try:
@@ -51,48 +57,49 @@ def calculate_matches(des1, des2):
         return []
 
 
-def calculate_score(matches,keypoint1,keypoint2):
-    return 100 * (matches/min(keypoint1,keypoint2))
+def calculate_score(matches, keypoint1, keypoint2):
+    return 100 * (matches / min(keypoint1, keypoint2))
 
-def calculate_similarities(lst,result_pth,num,nbrs,content_pth,recalc=False):
+
+def calculate_similarities(lst, result_pth, num, nbrs, content_pth, recalc=False):
     max_score = 0
     if os.path.exists(result_pth) and not recalc:
         return 0
     if not os.path.exists(content_pth):
         print("Error - No content file found")
         return 1
-    features={} # keypoints and descriptors
-    sim_list = [] # list to store results
+    features = {}  # keypoints and descriptors
+    sim_list = []  # list to store results
     with open(content_pth) as json_file:
         c_data = json.load(json_file)
     c_list = sorted(c_data, key=operator.itemgetter("id"))
     for i in range(num):
         img = image_resize(cv2.imread(lst[i]))
         keypoints, descriptors = compute_SIFT(img)
-        features[i] = (keypoints,descriptors)
+        features[i] = (keypoints, descriptors)
     for i in range(num):
         keypoints_i, descriptors_i = features[i]
-        for j in range(max(0,i-nbrs),min(num,i+nbrs+1)):
-            if i==j:
+        for j in range(max(0, i - nbrs), min(num, i + nbrs + 1)):
+            if i == j:
                 continue
             keypoints_j, descriptors_j = features[j]
             matches = calculate_matches(descriptors_i, descriptors_j)
-            if len(keypoints_i) == 0 or len(keypoints_j)==0:
+            if len(keypoints_i) == 0 or len(keypoints_j) == 0:
                 f_sim_score = 0
             else:
                 f_sim_score = calculate_score(len(matches), len(keypoints_i), len(keypoints_j))
-            c_sim_score = (1 - distance.cdist([c_list[i]["content"]], [c_list[j]["content"]], 'cosine')[0][0])*15
-            if c_sim_score <0:
+            c_sim_score = (1 - distance.cdist([c_list[i]["content"]], [c_list[j]["content"]], 'cosine')[0][0]) * 15
+            if c_sim_score < 0:
                 c_sim_score = 0
-            elif c_sim_score >100:
+            elif c_sim_score > 100:
                 c_sim_score = 100
-            if max_score<c_sim_score:
+            if max_score < c_sim_score:
                 max_score = c_sim_score
-            sim_list+=[{"first_id": i,
-                        "second_id": j,
-                        "first_img": lst[i],
-                        "second_img": lst[j],
-                        "feature_similarity_score": f_sim_score,
-                        "content_similarity_score": c_sim_score}]
+            sim_list += [{"first_id": i,
+                          "second_id": j,
+                          "first_img": lst[i],
+                          "second_img": lst[j],
+                          "feature_similarity_score": f_sim_score,
+                          "content_similarity_score": c_sim_score}]
     with open(os.path.join(os.getcwd(), result_pth), "w") as write_file:
         json.dump(sim_list, write_file, indent=2)

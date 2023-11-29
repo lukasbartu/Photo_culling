@@ -11,5 +11,8 @@ testing methods/nn/best_checkpoint_nn.index
 testing methods/nn/best_checkpoint_nn.data-00000-of-00001
 checkpoint
 testing methods/nn/best_nn_model.keras
+testing methods/nn/F1_score.txt
+testing methods/nn/NN_training*
+testing methods/logistic regression grad search/Log_reg*
 
 

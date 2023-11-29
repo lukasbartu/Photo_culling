@@ -5,7 +5,8 @@ from quality_assessment import calculate_qualities
 from similarity_assessment import calculate_similarities
 from content_assessment import calculate_content
 from summary_creation import select_summary
-from utils import prepare_paths, prepare_img_list, remove_folder_name, copy_images, save_list, load_trained
+from utils import (prepare_paths, prepare_img_list, remove_folder_name, 
+                   copy_images, save_list, load_trained)
 from metadata_creation import include_metadata_rating
 import logistic_regression
 import neural_network
@@ -41,9 +42,9 @@ def convert_to_bytes(file_or_bytes, resize=None):
     else:
         try:
             img = PIL.Image.open(io.BytesIO(base64.b64decode(file_or_bytes)))
-        except Exception as e:
-            dataBytesIO = io.BytesIO(file_or_bytes)
-            img = PIL.Image.open(dataBytesIO)
+        except Exception:
+            data_bytes_io = io.BytesIO(file_or_bytes)
+            img = PIL.Image.open(data_bytes_io)
 
     cur_width, cur_height = img.size
     if resize:
@@ -56,9 +57,9 @@ def convert_to_bytes(file_or_bytes, resize=None):
         return bio.getvalue()
 
 
-def update_both_models(s, lst, s_file, q_file, nbrs):
+def update_both_models(s, lst, s_file, q_file):
     logistic_regression.update_parameters(s, lst, s_file, q_file)
-    neural_network.update_model(s, lst, s_file, q_file, nbrs)
+    neural_network.update_model(s, lst, s_file, q_file)
 
 
 def make_win1():
@@ -192,10 +193,17 @@ img_num = None
 size = None
 c_q_ratio = None
 selection = True
+order = True
 summ_create = False
 auto_summ_nn = False
 auto_summ_reg = False
 updated = False
+size_based = True
+summary = []
+rest_list = []
+highlight = None
+tic = 0
+q_t, s_t, t_a_ratio, s_c_ratio, = 0, 0, 0, 0
 # Create an event loop
 try:
     while True:
@@ -214,7 +222,7 @@ try:
         if event == '-SELECTION_MODE':
             size_based = not size_based
             window['-SELECTION_MODE'].update(text='Output size' if size_based else 'Quality threshold',
-                                 button_color='white on green' if size_based else 'white on blue')
+                                             button_color='white on green' if size_based else 'white on blue')
         if event == "-SUMM_REC" or event == "-SUMM_AUTO_REG" or event == "-SUMM_MAN" or event == "-SUMM_AUTO_NN":
             if event == "-SUMM_MAN":
                 size = values["-SIZE"]
@@ -263,8 +271,8 @@ try:
             else:
                 recalc = values["-RECALC"]
             window.Refresh() if window else None
-            window.perform_long_operation(lambda: calculate_content(lst=img_list, result_pth=c_path, cuda=cuda)
-                                          , end_key="-CON_DONE")
+            window.perform_long_operation(lambda: calculate_content(lst=img_list, result_pth=c_path, cuda=cuda),
+                                          end_key="-CON_DONE")
 
         elif event == "-CON_DONE" and summ_create:
             print("Content description created")
@@ -293,7 +301,7 @@ try:
             else:
                 summary = select_summary(sim_pth=sim_path, q_pth=q_path, size=size, num=img_num,
                                          s_t=s_t, t_a_ratio=t_a_ratio, s_c_ratio=s_c_ratio, size_based=size_based,
-                                         q_cutoff= q_t)
+                                         q_cutoff=q_t)
             print("Summary calculated")
             window.Refresh() if window else None
 
@@ -326,6 +334,7 @@ try:
                 window['-IMAGE-'].update(data=convert_to_bytes(filename, resize=(900, 760)))
             except Exception:
                 pass
+            window['-ORDER'].update(text='Order by quality' if order else 'Order by name')
         if event == '-MOVE_UP':
             updated = False
             window.write_event_value("-PARA_UPDATED", None)
@@ -364,8 +373,8 @@ try:
             if len(summary) == 0:
                 sg.popup("Empty summary")
             window.perform_long_operation(lambda: update_both_models(s=summary, lst=img_list, s_file=sim_path,
-                                                                     q_file=q_path, nbrs=nbrs)
-                                          , end_key="-PARA_UPDATED")
+                                                                     q_file=q_path),
+                                          end_key="-PARA_UPDATED")
             updated = True
         if event == "-PARA_UPDATED":
             window['-UPDATE_PARA'].update(text="UPDATED" if updated else "Update parameters for automatic selection")

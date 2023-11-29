@@ -3,7 +3,6 @@ __author__ = 'Lukáš Bartůněk'
 import pyexiv2
 import operator
 import json
-from utils import prepare_img_list, prepare_paths
 
 
 def include_metadata_rating(img_list, q_file, t_a_ratio):
@@ -26,7 +25,7 @@ def include_metadata_rating(img_list, q_file, t_a_ratio):
     interval_size = (highest_q - lowest_q) / 5
     for i, img in enumerate(img_list):
         rating = int(((mixed_list[i]-lowest_q)/interval_size)) + 1
-        rating_percent = int(((mixed_list[i]-lowest_q) /(interval_size*5))*100)
+        rating_percent = int(((mixed_list[i]-lowest_q) / (interval_size*5))*100)
         if rating == 6:
             rating = 5
         try:
@@ -34,5 +33,5 @@ def include_metadata_rating(img_list, q_file, t_a_ratio):
                 meta = {'Exif.Image.Rating': rating,
                         'Exif.Image.RatingPercent': rating_percent}
                 handle.modify_exif(meta)
-        except:
+        except Exception:
             raise Exception

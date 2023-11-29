@@ -22,7 +22,8 @@ def update_scores(sim_data, image_scores, s_t, img, s_c_ratio):
     for i in range(img["id"]-20, img["id"]+21):
         if sim_data[i]["first_id"] != img["id"]:
             continue
-        if (s_c_ratio * sim_data[i]["feature_similarity_score"] + (1-s_c_ratio) * sim_data[i]["content_similarity_score"]) >= s_t:
+        if (s_c_ratio * sim_data[i]["feature_similarity_score"] +
+           (1-s_c_ratio) * sim_data[i]["content_similarity_score"]) >= s_t:
             i = sim_data[i]["second_id"]
             image_scores[i].update({"score": 0.1})
     return image_scores
@@ -36,13 +37,13 @@ def select_summary(sim_pth, q_pth, num, s_t, t_a_ratio, s_c_ratio, q_cutoff, siz
     image_scores = calculate_img_score(q_pth, t_a_ratio)
     top_list = []
     selected = 0
+    added_img = None
     with open(sim_pth) as json_file:
         sim_data = json.load(json_file)
     while selected < select_num:
         if selected != 0:
             image_scores = update_scores(sim_data, image_scores, s_t, added_img, s_c_ratio)
-        sorted_imgs = sorted(image_scores, key=operator.itemgetter("score"), reverse=True)
-        added_img = sorted_imgs[0]
+        added_img = sorted(image_scores, key=operator.itemgetter("score"), reverse=True)[0]
         if not size_based and (added_img["score"] < q_cutoff):
             break
         elif size_based and added_img["score"] < 0:

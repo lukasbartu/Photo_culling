@@ -9,7 +9,6 @@ from keras import preprocessing
 from keras.applications.efficientnet_v2 import preprocess_input, EfficientNetV2B1
 
 
-
 def pred_result(img, model):
     t = preprocessing.image.img_to_array(img)
     t = np.expand_dims(t, axis=0)
@@ -24,19 +23,19 @@ def calculate_content(lst, result_pth, cuda=True):
         return
     if cuda:
         with tf.device('/cpu:0'):
-            class_model = EfficientNetV2B1(weights='data/efficientnetv2-b1.h5')
+            class_model = EfficientNetV2B1(weights="data/efficientnetv2-b1.h5")
             content_list = []
             for i, img in enumerate(lst):
                 temp = preprocessing.image.load_img(img, color_mode='rgb', target_size=(240, 240))
                 res = pred_result(temp, class_model)
                 content_list += [{"id": i,
-                                "img": lst[i],
-                                "content": res}]
+                                  "img": lst[i],
+                                  "content": res}]
             with open(os.path.join(os.getcwd(), result_pth), "w") as write_file:
                 json.dump(content_list, write_file, indent=2)
     else:
         with tf.device('/gpu:0'):
-            class_model = EfficientNetV2B1(weights='data/efficientnetv2-b1.h5')
+            class_model = EfficientNetV2B1(weights="data/efficientnetv2-b1.h5")
             content_list = []
             for i, img in enumerate(lst):
                 temp = preprocessing.image.load_img(img, color_mode='rgb', target_size=(240, 240))

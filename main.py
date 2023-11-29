@@ -3,8 +3,11 @@ __author__ = 'Lukáš Bartůněk'
 # Select a subset of photographs from current directory to represent the sequence.
 # Considers both technical and aesthetic quality while trying to eliminate duplicity.
 #
-# SIFT similarity is edited code taken from https://github.com/adumrewal/SIFTImageSimilarity/blob/master/SIFTSimilarityInteractive.ipynb
-# NIMA image quality is edited code taken from https://github.com/yunxiaoshi/Neural-IMage-Assessment
+# SIFT similarity is edited code taken from:
+# https://github.com/adumrewal/SIFTImageSimilarity/blob/master/SIFTSimilarityInteractive.ipynb
+
+# NIMA image quality is edited code taken from:
+# https://github.com/yunxiaoshi/Neural-IMage-Assessment
 
 from quality_assessment import calculate_qualities
 from similarity_assessment import calculate_similarities
@@ -34,6 +37,7 @@ def main(arg_list):
     size_based = arg_list.size_based_selection
     nbrs = max(min(arg_list.number_of_neighbours, 20), 0)
 
+    summary = []
     if (arg_list.select_photos_man or arg_list.select_photos_recommended
             or arg_list.select_photos_reg or arg_list.select_photos_nn):
         if arg_list.select_photos_recommended:
@@ -93,7 +97,8 @@ def main(arg_list):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Generate a subset of photographs from current directory. "
-                    "Considers both technical and aesthetic quality as well as similarity between photographs.",
+                    "Considers both technical and aesthetic quality as well as similarity between photographs."
+                    "To access all the available functions use GUI version of this software.",
         epilog='Lukáš Bartůněk, 2023')
     parser.add_argument('-manual', '--select_photos_man',
                         help='Selection based on provided parameters.', action='store_true')
@@ -110,8 +115,8 @@ if __name__ == '__main__':
                         action='store_true')
 
     parser.add_argument('-n', '--number_of_neighbours',
-                        help='How many images before and after to consider for similarity calculation. [0:20]', type=int,
-                        default=5)
+                        help='How many images before and after to consider for similarity calculation. [0:20]',
+                        type=int, default=5)
 
     parser.add_argument('-t_a_ratio', '--t_a_ratio',
                         help='How much weight (0-100) to give to technical quality. '

@@ -4,7 +4,7 @@ import torch
 import json
 import operator
 import numpy as np
-from utils import get_class_weights, get_sim_window
+from utils import get_class_weights, format_data_sim
 
 
 def forward(x, s, w):
@@ -37,36 +37,11 @@ def format_data(s_file, q_file):
     with open(q_file) as f:
         q_data = json.load(f)
     q_list = sorted(q_data, key=operator.itemgetter("id"))
-    with open(s_file) as f:
-        s_data = json.load(f)
-    s_list = sorted(s_data, key=operator.itemgetter("first_id"))
 
-    nbrs = get_sim_window(s_list)
-    last_id = - 1
-    data_sim = []
-    for s in s_list:
-        if not s["first_id"] == last_id:
-            data_sim.append([])
-            spaces = nbrs - s["first_id"]
-            while spaces > 0:
-                data_sim[s["first_id"]].append([0, 0, 0, 0])
-                spaces -= 1
-            if not last_id == -1:
-                while len(data_sim[last_id]) < nbrs * 2:
-                    data_sim[last_id].append([0, 0, 0, 0])
-            last_id = s["first_id"]
-        second_img_score = [0, 0]
-        for q in q_list:
-            if q["id"] == s["second_id"]:
-                second_img_score = [q["aesthetic_quality"], q["technical_quality"]]
-        data_sim[last_id].append(
-            [second_img_score[0], second_img_score[1], s["feature_similarity_score"], s["content_similarity_score"]])
-    while len(data_sim[last_id]) < nbrs * 2:
-        data_sim[last_id].append([0, 0, 0, 0])
+    data_sim, nbrs = format_data_sim(s_file, q_file)
 
     pad = (20 - nbrs)
-    data_sim = np.asarray(data_sim)
-    data_sim = np.pad(data_sim, ((0, 0), (pad, pad), (0, 0)))
+    data_sim = np.pad(array=np.asarray(data_sim), pad_width=np.asarray([(0, 0), (pad, pad), (0, 0)]))
 
     data_q = []
     for q in q_list:
@@ -94,6 +69,7 @@ def update_parameters(s, lst, s_file, q_file):
     data_quality, data_similarity = format_data(s_file, q_file)
     weights = load_weights()
     old_weights = weights.tolist()
+    best_weights = []
 
     results = []
     for i, img in enumerate(lst):
@@ -134,4 +110,3 @@ def update_parameters(s, lst, s_file, q_file):
 
     new_weights = (0.5 * best_weights) + (0.5 * torch.asarray(old_weights))
     save_weights(new_weights.tolist())
-

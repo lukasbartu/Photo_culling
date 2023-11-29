@@ -4,6 +4,8 @@ import os
 import natsort
 import pathlib
 import shutil
+import json
+import operator
 
 
 def prepare_paths(pth):
@@ -40,25 +42,23 @@ def get_class_weights(results):
             true_samples += 1
         else:
             false_samples += 1
-    class_weights = [ (1 / true_samples) * (len(results) / 2.0) , (1 / false_samples) * (len(results) / 2.0)]
+    class_weights = [(1 / true_samples) * (len(results) / 2.0), (1 / false_samples) * (len(results) / 2.0)]
     return class_weights
 
 
 def load_trained():
-    with open('data/recommended_parameters.txt', 'r') as file:
-        data = file.readline()
-        data = data.split("|")
-        q_t, s_t, t_a_ratio, s_c_ratio , size = data
+    with open('data/recommended_parameters.json') as json_file:
+        data = json.load(json_file)
+        q_t, s_t, t_a_ratio, s_c_ratio, size = data
     return float(q_t), float(s_t), float(t_a_ratio), float(s_c_ratio), float(size)
 
 
 def get_sim_window(s_lst):
-    first_id =  s_lst[0]["first_id"]
+    first_id = s_lst[0]["first_id"]
     n = 0
-
-    for l in s_lst:
-        if l["first_id"] == first_id:
-            n+=1
+    for s_l in s_lst:
+        if s_l["first_id"] == first_id:
+            n += 1
     return n
 
 
@@ -77,3 +77,36 @@ def save_list(summary, folder, dest_folder):
         for img in summary:
             file.write(img)
             file.write(", ")
+
+
+def format_data_sim(s_file, q_file):
+    with open(q_file) as f:
+        q_data = json.load(f)
+    q_list = sorted(q_data, key=operator.itemgetter("id"))
+    with open(s_file) as f:
+        s_data = json.load(f)
+    s_list = sorted(s_data, key=operator.itemgetter("first_id"))
+
+    nbrs = get_sim_window(s_list)
+    last_id = - 1
+    data_sim = []
+    for s in s_list:
+        if not s["first_id"] == last_id:
+            data_sim.append([])
+            spaces = nbrs - s["first_id"]
+            while spaces > 0:
+                data_sim[s["first_id"]].append([0, 0, 0, 0])
+                spaces -= 1
+            if not last_id == -1:
+                while len(data_sim[last_id]) < nbrs * 2:
+                    data_sim[last_id].append([0, 0, 0, 0])
+            last_id = s["first_id"]
+        second_img_score = [0, 0]
+        for q in q_list:
+            if q["id"] == s["second_id"]:
+                second_img_score = [q["aesthetic_quality"], q["technical_quality"]]
+        data_sim[last_id].append(
+            [second_img_score[0], second_img_score[1], s["feature_similarity_score"], s["content_similarity_score"]])
+    while len(data_sim[last_id]) < nbrs * 2:
+        data_sim[last_id].append([0, 0, 0, 0])
+    return data_sim, nbrs
