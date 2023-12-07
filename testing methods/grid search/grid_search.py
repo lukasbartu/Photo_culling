@@ -14,7 +14,7 @@ def num_common_elements(list1, list2):
     return len(result)
 
 
-with open('res_lists.json') as json_file:
+with open('../logistic regression grad search/res_lists.json') as json_file:
     res_lists = json.load(json_file)
 
 r_lst = []
@@ -24,10 +24,10 @@ for r in res_lists:
 s_file = "image_similarity_originals.json"
 q_file = "image_quality_originals.json"
 
-q_range = [0, 100, 20, 100]
-s_range = [0, 100, 20, 100]
-tar_range = [0, 100, 10, 100]
-scr_range = [0, 100, 10, 100]
+q_range = [0, 100, 50, 100]
+s_range = [0, 100, 50, 100]
+tar_range = [0, 100, 20, 100]
+scr_range = [0, 100, 20, 100]
 best_f1 = 0
 good_f1 = 0
 best_p = [50, 50, 50, 50]
@@ -45,7 +45,7 @@ for i in range(5):
     print('TESTING C')
     good_f1 = 0
     possible_good_c = []
-    for i, c in enumerate(tar):
+    for i, c in enumerate(scr):
         if i == 0:
             continue
         for s in possible_good_s:
@@ -53,7 +53,6 @@ for i in range(5):
                 for t in possible_good_t:
                     summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
                                              s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
-
                     true_positive = num_common_elements(summary, r_lst)
                     false_positive = len(summary) - true_positive
                     false_negative = len(r_lst) - true_positive
@@ -92,6 +91,30 @@ for i in range(5):
                         best_f1 = f1
                         best_p = [q, s, t, c]
                     print("Q", q, "S", s, "T", t, "C", c, "F1", f1)
+    print('TESTING Q')
+    good_f1 = 0
+    possible_good_q = []
+    for i, q in enumerate(qt):
+        if i == 0:
+            continue
+        for s in possible_good_s:
+            for t in possible_good_t:
+                for c in possible_good_c:
+                    summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
+                                             s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
+                    true_positive = num_common_elements(summary, r_lst)
+                    false_positive = len(summary) - true_positive
+                    false_negative = len(r_lst) - true_positive
+                    f1 = (2 * true_positive) / (2 * true_positive + false_positive + false_negative)
+                    if f1 > good_f1:
+                        good_f1 = f1
+                        possible_good_q = [q]
+                    elif f1 == good_f1 and q not in possible_good_q:
+                        possible_good_q.append(q)
+                    if f1 > best_f1:
+                        best_f1 = f1
+                        best_p = [q, s, t, c]
+                    print("Q", q, "S", s, "T", t, "C", c, "F1", f1)
     print('TESTING S')
     good_f1 = 0
     possible_good_s = []
@@ -116,31 +139,7 @@ for i in range(5):
                         best_f1 = f1
                         best_p = [q, s, t, c]
                     print("Q", q, "S", s, "T", t, "C", c, "F1", f1)
-    print('TESTING Q')
-    good_f1 = 0
-    possible_good_q = []
-    for i, q in enumerate(qt):
-        if i == 0:
-            continue
-        for s in possible_good_s:
-            for t in possible_good_t:
-                for c in possible_good_c:
-                    summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
-                                             s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
 
-                    true_positive = num_common_elements(summary, r_lst)
-                    false_positive = len(summary) - true_positive
-                    false_negative = len(r_lst) - true_positive
-                    f1 = (2 * true_positive) / (2 * true_positive + false_positive + false_negative)
-                    if f1 > good_f1:
-                        good_f1 = f1
-                        possible_good_q = [q]
-                    elif f1 == good_f1 and q not in possible_good_q:
-                        possible_good_q.append(q)
-                    if f1 > best_f1:
-                        best_f1 = f1
-                        best_p = [q, s, t, c]
-                    print("Q", q, "S", s, "T", t, "C", c, "F1", f1)
 
 
     print("BEST PARS:", best_p, "BEST F1", best_f1)

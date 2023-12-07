@@ -143,7 +143,7 @@ loss_val = []
 
 change = 0
 momentum = 0.7
-lr = torch.asarray([0.001, 0.001, 0.01, 0.01])
+lr = torch.asarray([0.001, 0.001, 0.001, 0.001])
 best_loss = 1e10
 # best_weights = torch.tensor([5.0190735553839785, 54.9600518080562, 90.79135620039723, 15.250126458043551])
 best_epoch = 0
