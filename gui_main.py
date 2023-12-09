@@ -108,7 +108,7 @@ layout1 = [
         sg.Push()
     ], [
         sg.Push(),
-        sg.Text("Output size in percents"),
+        sg.Text("Output size in percent"),
         sg.Push(),
         sg.Slider((0, 100), orientation='h', s=(10, 15), default_value=10, resolution=2,
                   key="-SIZE"),
@@ -143,7 +143,7 @@ layout1 = [
     ],[
         sg.HSeparator(),
     ],[
-        sg.Checkbox("Write metadata", key="-METADATA", enable_events=True, default=True),
+        sg.Checkbox("Write metadata", key="-METADATA", enable_events=True, default=False),
         sg.Push(),
         sg.Checkbox("Use graphics card if possible", key="-CUDA", enable_events=True, default=True)
     ], [
@@ -375,9 +375,10 @@ try:
         if event == "-UPDATE_PARA":
             if len(summary) == 0:
                 sg.popup("Empty summary")
-            window.perform_long_operation(lambda: update_both_models(s=summary, lst=img_list, s_file=sim_path,
+            window.perform_long_operation(lambda: update_both_models(s=summary, lst=img_list_removed, s_file=sim_path,
                                                                      q_file=q_path),
                                           end_key="-PARA_UPDATED")
+            window['-UPDATE_PARA'].update(text="Updating...")
             updated = True
         if event == "-PARA_UPDATED":
             window['-UPDATE_PARA'].update(text="UPDATED" if updated else "Update parameters for automatic selection")

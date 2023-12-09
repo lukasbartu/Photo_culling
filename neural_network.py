@@ -56,7 +56,7 @@ def update_model(s, lst, s_file, q_file):
     results = np.asarray(results)
     results = results.astype("float32")
 
-    model = keras.models.load_model("data/best_nn_model.keras")
+    model = keras.models.load_model('data/best_nn_model.keras')
 
     if len(s) == 0:
         return
@@ -65,5 +65,5 @@ def update_model(s, lst, s_file, q_file):
     model.fit(data, results, epochs=100, class_weight={0: class_weights[1], 1: class_weights[0]},
               verbose=False, workers=-1)
 
-    model.save("data/best_nn_model.keras")
+    model.save('data/best_nn_model.keras')
 
