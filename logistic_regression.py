@@ -56,7 +56,7 @@ def format_data(s_file, q_file):
 
 def summary(lst, s_file, q_file):
     data_quality, data_similarity = format_data(s_file, q_file)
-    weights = load_weights()  # [t_a_r, q_t, f_c_r, s_t]
+    weights = load_weights()  # [t_a_r, q_t, s_c_r, s_t]
     pred = forward(data_quality, data_similarity, weights)
     s = []
     for i, p in enumerate(pred):
@@ -81,8 +81,8 @@ def update_parameters(s, lst, s_file, q_file):
     class_weights = get_class_weights(results)
 
     change = 0
-    momentum = 0.7
-    lr = torch.asarray([0.001, 0.001, 0.01, 0.01])
+    momentum = 0.9
+    lr = torch.asarray([0.01, 0.01, 0.01, 0.01])
     best_loss = 1e10
     for i in range(1000):
         pred = forward(data_quality, data_similarity, weights)

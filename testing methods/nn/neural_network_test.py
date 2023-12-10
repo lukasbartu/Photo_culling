@@ -99,8 +99,9 @@ res = model.evaluate(test_data, test_results)
 with open('F1_score.txt', 'w') as file:
     file.write(str(res[1]))
 
+cross_validation = np.concatenate((train_data, validate_data, test_data))
+cross_validation_results = np.concatenate((train_results, validate_results, test_results))
+
+res = model.evaluate(cross_validation, cross_validation_results)
+
 model.save("best_nn_model.keras")
-
-
-
-
