@@ -1,6 +1,8 @@
 images/
 .idea
-*.json
+image_*.json
+img_lists.json
+res_lists.json
 jupyter_logs
 Selected images
 grid search results
