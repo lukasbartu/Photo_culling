@@ -51,7 +51,7 @@ for i in range(5):
         for s in possible_good_s:
             for q in possible_good_q:
                 for t in possible_good_t:
-                    summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
+                    summary = select_summary(sim_pth=s_file, q_pth=q_file, num=6000,
                                              s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
                     true_positive = num_common_elements(summary, r_lst)
                     false_positive = len(summary) - true_positive
@@ -75,7 +75,7 @@ for i in range(5):
         for s in possible_good_s:
             for q in possible_good_q:
                 for c in possible_good_c:
-                    summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
+                    summary = select_summary(sim_pth=s_file, q_pth=q_file, num=6000,
                                              s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
 
                     true_positive = num_common_elements(summary, r_lst)
@@ -100,7 +100,7 @@ for i in range(5):
         for s in possible_good_s:
             for t in possible_good_t:
                 for c in possible_good_c:
-                    summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
+                    summary = select_summary(sim_pth=s_file, q_pth=q_file, num=6000,
                                              s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
                     true_positive = num_common_elements(summary, r_lst)
                     false_positive = len(summary) - true_positive
@@ -124,7 +124,7 @@ for i in range(5):
         for q in possible_good_q:
             for t in possible_good_t:
                 for c in possible_good_c:
-                    summary = select_summary(sim_pth=s_file, q_pth=q_file, num=3000,
+                    summary = select_summary(sim_pth=s_file, q_pth=q_file, num=6000,
                                              s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
                     true_positive = num_common_elements(summary, r_lst)
                     false_positive = len(summary) - true_positive
