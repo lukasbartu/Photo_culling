@@ -64,6 +64,8 @@ def update_both_models(s, lst, s_file, q_file):
 
 layout1 = [
     [
+        sg.Text("Selection settings", size=(15, 4), font=10)
+    ], [
         sg.Push(),
         sg.Text("Image Folder"),
         sg.In(size=(25, 1), enable_events=True, key="-FOLDER-"),
