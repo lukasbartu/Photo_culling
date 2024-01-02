@@ -30,7 +30,7 @@ def format_data(s_file, q_file):
     return data
 
 
-def summary(lst, s_file, q_file):
+def summary(lst, s_file, q_file, output_size, size_based):
     data = format_data(s_file, q_file)
 
     model = keras.models.load_model("data/best_nn_model.keras")
@@ -38,9 +38,25 @@ def summary(lst, s_file, q_file):
     pred = model.predict(data, verbose=False)
 
     s = []
-    for i, p in enumerate(pred):
-        if p >= 0.5:
-            s.append(lst[i])
+    threshold = 0.5
+    n = 0
+    if size_based:
+        while len(s) != output_size:
+            if n == 50000:
+                break
+            n += 1
+            s = []
+            for i, p in enumerate(pred):
+                if p >= threshold:
+                    s.append(lst[i])
+            if len(s) > output_size:
+                threshold = threshold * 1.011
+            elif len(s) < output_size:
+                threshold = threshold * 0.09
+    else:
+        for i, p in enumerate(pred):
+            if p >= threshold:
+                s.append(lst[i])
     return s
 
 
@@ -62,7 +78,7 @@ def update_model(s, lst, s_file, q_file):
         return
     class_weights = get_class_weights(results)
 
-    model.fit(data, results, epochs=100, class_weight={0: class_weights[1], 1: class_weights[0]},
+    model.fit(data, results, epochs=10, class_weight={0: class_weights[1], 1: class_weights[0]},
               verbose=False, workers=-1)
 
     model.save('data/best_nn_model.keras')

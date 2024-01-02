@@ -20,9 +20,6 @@ train_results = []
 validate_data = []
 validate_data_sim = []
 validate_results = []
-test_data = []
-test_data_sim = []
-test_results = []
 
 for i, img_list in enumerate(img_lists):
     q_file = "image_quality_" + names[i] + ".json"
@@ -60,11 +57,7 @@ for i, img_list in enumerate(img_lists):
 
     for j, img in enumerate(img_list):
         if img in res_lists[i]:
-            if i == 5:
-                test_data.append((q_list[j]["aesthetic_quality"], q_list[j]["technical_quality"]))
-                test_data_sim.append(data_sim[j])
-                test_results.append(1)
-            elif i == 4:
+            if j % 10 == 0:
                 validate_data.append((q_list[j]["aesthetic_quality"], q_list[j]["technical_quality"]))
                 validate_data_sim.append(data_sim[j])
                 validate_results.append(1)
@@ -73,11 +66,7 @@ for i, img_list in enumerate(img_lists):
                 train_data_sim.append(data_sim[j])
                 train_results.append(1)
         else:
-            if i == 5:
-                test_data.append((q_list[j]["aesthetic_quality"], q_list[j]["technical_quality"]))
-                test_data_sim.append(data_sim[j])
-                test_results.append(0)
-            elif i == 4:
+            if j % 10 == 0:
                 validate_data.append((q_list[j]["aesthetic_quality"], q_list[j]["technical_quality"]))
                 validate_data_sim.append(data_sim[j])
                 validate_results.append(0)
@@ -94,9 +83,8 @@ validate_data = torch.asarray(validate_data).T
 validate_data_sim = torch.transpose(torch.asarray(validate_data_sim), 0, 2)
 validate_results = torch.asarray(validate_results)
 
-# test_data = torch.asarray(test_data).T
-# test_data_sim = torch.transpose(torch.asarray(test_data_sim), 0, 2)
-# test_results = torch.asarray(test_results)
+print(validate_data.shape)
+print(validate_results.shape)
 
 true_samples = 0
 false_samples = 0
@@ -133,19 +121,19 @@ def loss_fun(y, y_pred, c_w):
 
 
 # t_a_r, q_t, s_c_r, s_t
-weights = torch.tensor([5, 55, 90, 20], requires_grad=True, dtype=torch.double)
+weights = torch.tensor([5, 55, 95, 10], requires_grad=True, dtype=torch.double)
 
 loss_BGD = []
 loss_val = []
 
 change = 0
 momentum = 0.9
-lr = torch.asarray([0.01, 0.01, 0.01, 0.01])
+lr = torch.asarray([0.001, 0.001, 0.001, 0.001])
 best_loss = 1e10
-# best_weights = torch.tensor([5.0190735553839785, 54.9600518080562, 90.79135620039723, 15.250126458043551])
+# best_weights = torch.tensor([5.160711678728555, 54.57846529365368, 94.50316336567906, 15.3497764158304])
 best_epoch = 0
 eps = 1e-20
-for i in range(10000):
+for i in range(3000):
     pred = forward(train_data, train_data_sim, weights)
     loss = loss_fun(train_results, pred, class_weights_train)
     loss_BGD.append(loss.item())
@@ -191,8 +179,8 @@ plt.title("Batch gradient descent")
 plt.savefig("Log_reg.pdf", format="pdf", bbox_inches="tight")
 plt.show()
 
-x_axis = np.arange(best_epoch-200,best_epoch+201,1)
-plt.plot(x_axis,loss_val[best_epoch-200:best_epoch+201], label="Validation loss", color="tab:orange")
+x_axis = np.arange(best_epoch-500,best_epoch+501,1)
+plt.plot(x_axis,loss_val[best_epoch-500:best_epoch+501], label="Validation loss", color="tab:orange")
 plt.axvline(x=best_epoch, color="tab:red", ls="--", label="Best validation loss")
 plt.xlabel('Epoch')
 plt.ylabel('Cost')
@@ -201,20 +189,7 @@ plt.title("Validation loss close-up")
 plt.savefig("Log_reg_close-up.pdf", format="pdf", bbox_inches="tight")
 plt.show()
 
-# true_samples = 0
-# false_samples = 0
-# for result in test_results:
-#     if result == 1:
-#         true_samples += 1
-#     else:
-#         false_samples += 1
-# class_weights_test = [len(test_results) / (true_samples * 2), len(test_results) / (false_samples * 2)]
-#
-# pred = forward(test_data, test_data_sim, best_weights)
-# loss = loss_fun(test_results, pred, class_weights_test)
-#
-# print("TEST LOSS:", loss.item())
-#
+
 true_positive = 0
 true_negative = 0
 false_positive = 0
@@ -224,29 +199,7 @@ false_num = 0
 class_threshold = 0.5
 positive = 0
 negative = 0
-# with torch.no_grad():
-#     for i, p in enumerate(pred):
-#         if p >= class_threshold and test_results[i].item() == 1:
-#             positive += 1
-#             true_positive += 1
-#         elif p < class_threshold and test_results[i].item() == 0:
-#             negative += 1
-#             true_negative += 1
-#         elif p >= class_threshold and test_results[i].item() == 0:
-#             positive += 1
-#             false_positive += 1
-#         else:
-#             negative += 1
-#             false_negative += 1
-#
-#     if true_positive == 0:
-#         f1 = 0
-#     else:
-#         precision = true_positive / (true_positive + false_positive)
-#         recall = true_positive / (true_positive + false_negative)
-#         f1 = (2 * precision * recall) / (precision + recall)
-#
-# print("TEST F1 Score:", f1)
+
 
 cross_validation = torch.tensor(np.concatenate((train_data, validate_data), axis=1))
 cross_validation_sim = torch.tensor(np.concatenate((train_data_sim, validate_data_sim), axis=2))

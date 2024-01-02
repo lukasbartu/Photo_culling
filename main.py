@@ -15,7 +15,7 @@ from content_assessment import calculate_content
 from summary_creation import select_summary
 from utils import prepare_paths, prepare_img_list, remove_folder_name, copy_images, save_list, load_trained
 from metadata_creation import include_metadata_rating
-import logistic_regression
+import logical_approximation
 import neural_network
 
 import time

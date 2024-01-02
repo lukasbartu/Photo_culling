@@ -14,7 +14,7 @@ def num_common_elements(list1, list2):
     return len(result)
 
 
-with open('../logistic regression grad search/res_lists.json') as json_file:
+with open('../logical approximation grad search/res_lists.json') as json_file:
     res_lists = json.load(json_file)
 
 r_lst = []
@@ -24,20 +24,20 @@ for r in res_lists:
 s_file = "image_similarity_originals.json"
 q_file = "image_quality_originals.json"
 
-q_range = [0, 100, 50, 100]
-s_range = [0, 100, 50, 100]
-tar_range = [0, 100, 20, 100]
-scr_range = [0, 100, 20, 100]
+q_range = [0, 100, 5, 101]
+s_range = [0, 100, 5, 101]
+tar_range = [0, 100, 5, 101]
+scr_range = [0, 100, 5, 101]
 best_f1 = 0
 good_f1 = 0
 best_p = [50, 50, 50, 50]
 
-possible_good_q = [50]
-possible_good_s = [50]
+possible_good_q = [60]
+possible_good_s = [10]
 possible_good_t = [50]
 possible_good_c = [50]
 
-for i in range(5):
+for k in range(2):
     qt = np.arange(q_range[0], q_range[1], q_range[2])
     st = np.arange(s_range[0], s_range[1], s_range[2])
     tar = np.arange(tar_range[0], tar_range[1], tar_range[2])
@@ -46,13 +46,12 @@ for i in range(5):
     good_f1 = 0
     possible_good_c = []
     for i, c in enumerate(scr):
-        if i == 0:
-            continue
         for s in possible_good_s:
             for q in possible_good_q:
                 for t in possible_good_t:
                     summary = select_summary(sim_pth=s_file, q_pth=q_file, num=6000,
-                                             s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
+                                             s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c,
+                                             size_based=False)
                     true_positive = num_common_elements(summary, r_lst)
                     false_positive = len(summary) - true_positive
                     false_negative = len(r_lst) - true_positive
@@ -70,14 +69,11 @@ for i in range(5):
     good_f1 = 0
     possible_good_t = []
     for i, t in enumerate(tar):
-        if i == 0:
-            continue
         for s in possible_good_s:
             for q in possible_good_q:
                 for c in possible_good_c:
                     summary = select_summary(sim_pth=s_file, q_pth=q_file, num=6000,
-                                             s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
-
+                                             s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c, size_based=False)
                     true_positive = num_common_elements(summary, r_lst)
                     false_positive = len(summary) - true_positive
                     false_negative = len(r_lst) - true_positive
@@ -95,13 +91,11 @@ for i in range(5):
     good_f1 = 0
     possible_good_q = []
     for i, q in enumerate(qt):
-        if i == 0:
-            continue
         for s in possible_good_s:
             for t in possible_good_t:
                 for c in possible_good_c:
                     summary = select_summary(sim_pth=s_file, q_pth=q_file, num=6000,
-                                             s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
+                                             s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c, size_based=False)
                     true_positive = num_common_elements(summary, r_lst)
                     false_positive = len(summary) - true_positive
                     false_negative = len(r_lst) - true_positive
@@ -119,13 +113,11 @@ for i in range(5):
     good_f1 = 0
     possible_good_s = []
     for i, s in enumerate(st):
-        if i == 0:
-            continue
         for q in possible_good_q:
             for t in possible_good_t:
                 for c in possible_good_c:
                     summary = select_summary(sim_pth=s_file, q_pth=q_file, num=6000,
-                                             s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c)
+                                             s_t=s, t_a_ratio=t, q_cutoff=q, s_c_ratio=c, size_based=False)
                     true_positive = num_common_elements(summary, r_lst)
                     false_positive = len(summary) - true_positive
                     false_negative = len(r_lst) - true_positive
@@ -140,17 +132,15 @@ for i in range(5):
                         best_p = [q, s, t, c]
                     print("Q", q, "S", s, "T", t, "C", c, "F1", f1)
 
-
-
     print("BEST PARS:", best_p, "BEST F1", best_f1)
     size = [q_range[3], s_range[3], tar_range[3], scr_range[3]]
-    q_range = [max(best_p[0] - size[0] / 4, 0), min(best_p[0] + size[0] / 4, 100), size[0] / 10,
+    q_range = [max(best_p[0] - size[0] / 4, 0), min(best_p[0] + size[0] / 4, 100), 1,
                min(best_p[0] + size[0] / 4, 100) - max(best_p[0] - size[0] / 4, 0)]
-    s_range = [max(best_p[1] - size[1] / 4, 0), min(best_p[1] + size[1] / 4, 100), size[1] / 10,
+    s_range = [max(best_p[1] - size[1] / 4, 0), min(best_p[1] + size[1] / 4, 100), 1,
                min(best_p[1] + size[1] / 4, 100) - max(best_p[1] - size[1] / 4, 0)]
-    tar_range = [max(best_p[2] - size[2] / 4, 0), min(best_p[2] + size[2] / 4, 100), size[2] / 20,
+    tar_range = [max(best_p[2] - size[2] / 4, 0), min(best_p[2] + size[2] / 4, 100), 1,
                  min(best_p[2] + size[2] / 4, 100) - max(best_p[2] - size[2] / 4, 0)]
-    scr_range = [max(best_p[3] - size[3] / 4, 0), min(best_p[3] + size[3] / 4, 100), size[3] / 20,
+    scr_range = [max(best_p[3] - size[3] / 4, 0), min(best_p[3] + size[3] / 4, 100), 1,
                  min(best_p[3] + size[3] / 4, 100) - max(best_p[3] - size[3] / 4, 0)]
     print("!!!RANGES!!!")
     print(q_range)
@@ -161,4 +151,3 @@ for i in range(5):
     possible_good_s = [best_p[1]]
     possible_good_t = [best_p[2]]
     possible_good_c = [best_p[3]]
-

@@ -49,8 +49,8 @@ def get_class_weights(results):
 def load_trained():
     with open('data/recommended_parameters.json') as json_file:
         data = json.load(json_file)
-        q_t, s_t, t_a_ratio, s_c_ratio, size = data
-    return float(q_t), float(s_t), float(t_a_ratio), float(s_c_ratio), float(size)
+        q_t, s_t, t_a_ratio, s_c_ratio = data
+    return float(q_t), float(s_t), float(t_a_ratio), float(s_c_ratio)
 
 
 def get_sim_window(s_lst):

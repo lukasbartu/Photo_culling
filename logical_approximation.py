@@ -23,13 +23,13 @@ def loss_fun(y, y_pred, c_w):
 
 
 def load_weights():
-    with open("data/logistic_regression_weights.json", "r") as read_file:
+    with open("data/logical_approximation.json", "r") as read_file:
         weights = json.load(read_file)
     return torch.asarray(weights, requires_grad=True)
 
 
 def save_weights(weights):
-    with open("data/logistic_regression_weights.json", "w") as write_file:
+    with open("data/logical_approximation.json", "w") as write_file:
         json.dump(weights, write_file, indent=2)
 
 
@@ -54,14 +54,33 @@ def format_data(s_file, q_file):
     return data_q, data_sim
 
 
-def summary(lst, s_file, q_file):
+def summary(lst, s_file, q_file,  output_size,  size_based):
     data_quality, data_similarity = format_data(s_file, q_file)
     weights = load_weights()  # [t_a_r, q_t, s_c_r, s_t]
     pred = forward(data_quality, data_similarity, weights)
+
     s = []
-    for i, p in enumerate(pred):
-        if p >= 0.5:
-            s.append(lst[i])
+    threshold = 0.5
+    n = 0
+    with torch.no_grad():
+        if size_based:
+            while len(s) != output_size:
+                if n == 5000:
+                    break
+                n += 1
+                s = []
+                for i, p in enumerate(pred):
+                    if p >= threshold:
+                        s.append(lst[i])
+                if len(s) > output_size:
+                    weights[1] = weights[1] * 1.11
+                elif len(s) < output_size:
+                    weights[1] = weights[1] * 0.9
+                pred = forward(data_quality, data_similarity, weights)
+        else:
+            for i, p in enumerate(pred):
+                if p >= threshold:
+                    s.append(lst[i])
     return s
 
 
@@ -110,3 +129,5 @@ def update_parameters(s, lst, s_file, q_file):
 
     new_weights = (0.5 * best_weights) + (0.5 * torch.asarray(old_weights))
     save_weights(new_weights.tolist())
+
+

@@ -15,6 +15,6 @@ checkpoint
 testing methods/nn/best_nn_model.keras
 testing methods/nn/F1_score.txt
 testing methods/nn/NN_training*
-testing methods/logistic regression grad search/Log_reg*
+testing methods/logical approximation grad search/Log_reg*
 
 
