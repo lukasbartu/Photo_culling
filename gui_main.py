@@ -553,19 +553,22 @@ try:
             print("Selecting summary of photos...", end="   ")
             window.Refresh() if window else None
             output_size = int(img_num * (size / 100))
-            if method_mode == 2:
-                summary = logical_approximation.summary(lst=img_list, s_file=sim_path, q_file=q_path,
-                                                        size_based=size_based, output_size=output_size)
-                weights = logical_approximation.load_weights()
-                t_a_ratio = weights[0].item()
-            elif method_mode == 3:
-                summary = neural_network.summary(lst=img_list, s_file=sim_path, q_file=q_path, size_based=size_based,
-                                                 output_size=output_size)
-                t_a_ratio = 50
-            elif method_mode == 1:
-                summary = select_summary(sim_pth=sim_path, q_pth=q_path, size=size, num=img_num,
-                                         s_t=s_t, t_a_ratio=t_a_ratio, s_c_ratio=s_c_ratio, size_based=size_based,
-                                         q_cutoff=q_t)
+            if size == 0:
+                summary = []
+            else:
+                if method_mode == 2:
+                    summary = logical_approximation.summary(lst=img_list, s_file=sim_path, q_file=q_path,
+                                                            size_based=size_based, output_size=output_size)
+                    weights = logical_approximation.load_weights()
+                    t_a_ratio = weights[0].item()
+                elif method_mode == 3:
+                    summary = neural_network.summary(lst=img_list, s_file=sim_path, q_file=q_path, size_based=size_based,
+                                                     output_size=output_size)
+                    t_a_ratio = 50
+                elif method_mode == 1:
+                    summary = select_summary(sim_pth=sim_path, q_pth=q_path, size=size, num=img_num,
+                                             s_t=s_t, t_a_ratio=t_a_ratio, s_c_ratio=s_c_ratio, size_based=size_based,
+                                             q_cutoff=q_t)
             print("Summary calculated")
             window.Refresh() if window else None
 
