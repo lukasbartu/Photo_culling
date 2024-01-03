@@ -131,3 +131,10 @@ def update_parameters(s, lst, s_file, q_file):
     save_weights(new_weights.tolist())
 
 
+def reset_model():
+    with open("data/logical_approximation_default.json", "r") as read_file:
+        weights = json.load(read_file)
+    weights = torch.asarray(weights, requires_grad=True)
+
+    with open("data/logical_approximation.json", "w") as write_file:
+        json.dump(weights, write_file, indent=2)

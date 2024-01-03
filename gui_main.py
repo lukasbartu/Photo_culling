@@ -69,6 +69,11 @@ def update_both_models(s, lst, s_file, q_file):
     neural_network.update_model(s, lst, s_file, q_file)
 
 
+def reset_models():
+    logical_approximation.reset_model()
+    neural_network.reset_model()
+
+
 manual_col = [
     [
         sg.Push(),
@@ -323,6 +328,9 @@ layout2 = [
         sg.VSeparator(),
         sg.Column(images_col, element_justification='c')
     ], [
+        sg.Push(),
+        sg.Button("Reset parameters for automatic selection to default values", key="-RESET_PARA",
+                  size=(25, 2)),
         sg.Push(),
         sg.Button("Update parameters for automatic selection", key="-UPDATE_PARA", size=(20, 2)),
         sg.In(key="-COPY", visible=False, enable_events=True),
@@ -685,5 +693,9 @@ try:
             updated = True
         if event == "-PARA_UPDATED":
             window['-UPDATE_PARA'].update(text="UPDATED" if updated else "Update parameters for automatic selection")
+        if event == "-RESET_PARA":
+            if sg.popup_yes_no("Are you sure you want to reset automatic parameters?", title="Confirmation"):
+                reset_models()
+
 except Exception as e:
     sg.popup_error_with_traceback(f"An error happened. Here is traceback:", e)

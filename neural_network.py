@@ -83,3 +83,8 @@ def update_model(s, lst, s_file, q_file):
 
     model.save('data/best_nn_model.keras')
 
+
+def reset_model():
+    model = keras.models.load_model('data/best_nn_model_default.keras')
+    model.save('data/best_nn_model.keras')
+
