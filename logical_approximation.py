@@ -100,10 +100,10 @@ def update_parameters(s, lst, s_file, q_file):
     class_weights = get_class_weights(results)
 
     change = 0
-    momentum = 0.9
-    lr = torch.asarray([0.01, 0.01, 0.01, 0.01])
+    momentum = 0.8
+    lr = torch.asarray([0.1, 0.1, 0.1, 0.1])
     best_loss = 1e10
-    for i in range(1000):
+    for i in range(5000):
         pred = forward(data_quality, data_similarity, weights)
         loss = loss_fun(results, pred, class_weights)
         loss.backward()
@@ -127,7 +127,7 @@ def update_parameters(s, lst, s_file, q_file):
             weights[3] = max(weights[3], 0)
         weights.grad.zero_()
 
-    new_weights = (0.5 * best_weights) + (0.5 * torch.asarray(old_weights))
+    new_weights = (0.8 * best_weights) + (0.2 * torch.asarray(old_weights))
     save_weights(new_weights.tolist())
 
 

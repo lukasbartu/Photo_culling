@@ -7,6 +7,8 @@ import numpy as np
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import keras
+from keras.optimizers.experimental import RMSprop
+from keras.metrics import F1Score
 
 
 def format_data(s_file, q_file):
@@ -78,13 +80,16 @@ def update_model(s, lst, s_file, q_file):
         return
     class_weights = get_class_weights(results)
 
-    model.fit(data, results, epochs=10, class_weight={0: class_weights[1], 1: class_weights[0]},
+    model.compile(optimizer=RMSprop(learning_rate=0.001), loss="binary_crossentropy",
+                  metrics=F1Score(threshold=0.5), weighted_metrics=[])
+
+    model.fit(data, results, epochs=100, class_weight={0: class_weights[1], 1: class_weights[0]},
               verbose=False, workers=-1)
 
-    model.save('data/best_nn_model.keras', save_format='keras')
+    keras.saving.save_model(model, 'data/best_nn_model.keras', save_format='keras')
 
 
 def reset_model():
     model = keras.models.load_model('data/best_nn_model_default.keras')
-    model.save('data/best_nn_model.keras',save_format='keras')
+    keras.saving.save_model(model, 'data/best_nn_model.keras', save_format='keras')
 

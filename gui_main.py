@@ -18,6 +18,14 @@ import PIL.Image
 import io
 import base64
 import natsort
+import warnings
+
+
+def warn(*args, **kwargs):
+    pass
+
+
+warnings.warn = warn
 
 
 # PysimpleGUI demo
@@ -507,15 +515,6 @@ try:
             elif method_mode == 0:
                 sg.popup("Choose selection method")
             else:
-                size = values["-SIZE"]
-                if selection_mode == 1:
-                    q_t = values["-QUALITY_CUTOFF"]
-                    s_t = values["-S_T"]
-                    t_a_ratio = values["-T_A_RATIO"]/100
-                    s_c_ratio = values["-S_C_RATIO"]/100
-                else:
-                    q_t, s_t, t_a_ratio, s_c_ratio = generate_preset_values(qua_preset, sim_preset, tar_preset,
-                                                                            scr_preset, q_path, sim_path)
                 summ_create = True
                 cuda = values["-CUDA"]
                 window["-OUTPUT"].Update('')
@@ -552,6 +551,15 @@ try:
             window.Refresh() if window else None
             print("Selecting summary of photos...", end="   ")
             window.Refresh() if window else None
+            size = values["-SIZE"]
+            if selection_mode == 1:
+                q_t = values["-QUALITY_CUTOFF"]
+                s_t = values["-S_T"]
+                t_a_ratio = values["-T_A_RATIO"] / 100
+                s_c_ratio = values["-S_C_RATIO"] / 100
+            else:
+                q_t, s_t, t_a_ratio, s_c_ratio = generate_preset_values(qua_preset, sim_preset, tar_preset,
+                                                                        scr_preset, q_path, sim_path)
             output_size = int(img_num * (size / 100))
             if size == 0:
                 summary = []
@@ -624,7 +632,6 @@ try:
                 window['-REST_LIST'].update(rest_list)
                 highlight_idx = summary.index(highlight)
                 highlight = summary[highlight_idx]
-                window["-REST_LIST"].update(set_to_index=[])
                 window["-SUM_LIST"].update(set_to_index=highlight_idx,scroll_to_index=max(highlight_idx-5,0))
                 sum_highlight = True
                 filename = os.path.join(folder, highlight)
@@ -644,7 +651,6 @@ try:
                 highlight_idx = rest_list.index(highlight)
                 highlight = rest_list[highlight_idx]
                 window["-REST_LIST"].update(set_to_index=highlight_idx, scroll_to_index=max(highlight_idx-5,0))
-                window["-SUM_LIST"].update(set_to_index=[])
                 sum_highlight = False
                 filename = os.path.join(folder, highlight)
                 window['-TOUT-'].update(highlight)
