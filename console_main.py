@@ -24,6 +24,8 @@ import os
 
 
 def main(arg_list):
+    print("This is a console version of this software. This version lacks some features that are included in "
+          "the GUI version. For full functionality use gui_main.py.")
     if not os.path.isdir(arg_list.directory):
         print("Not a directory!")
         return 1
