@@ -24,7 +24,8 @@ for i, name in enumerate(names):
     s_file = "image_similarity_" + names[i] + ".json"
 
     summary[i] = summary_creation.select_summary(sim_pth=s_file, q_pth=q_file, num=5000,
-                                                 s_t=20, t_a_ratio=5, q_cutoff=55, s_c_ratio=95)
+                                                 s_t=10, t_a_ratio=5, q_cutoff=55, s_c_ratio=5,
+                                                 size_based=False)
 
 true_positive = []
 false_positive = []

@@ -10,7 +10,7 @@ from utils import get_class_weights, format_data_sim
 def forward(x, s, w):
     ui = (x[0] * (1 - (w[0]/100)) + x[1] * (w[0]/100))
     uj = (s[0] * (1 - (w[0]/100)) + s[1] * (w[0]/100))
-    sij = (s[2] * (1 - (w[2]/100)) + s[3] * (w[2]/100))
+    sij = (s[2] * (w[2]/100) + s[3] * (1 - (w[2]/100)))
 
     p = torch.sigmoid(ui - w[1]) * torch.prod(1 - torch.sigmoid(sij - w[3]) * torch.sigmoid(uj - ui), dim=0)
     return p

@@ -73,7 +73,7 @@ model.compile(optimizer=RMSprop(learning_rate=0.00001), loss="binary_crossentrop
 history = model.fit(train_data, train_results, epochs=400, batch_size=10, workers=-1,
                     validation_data=(validate_data, validate_results, val_sample_weights),
                     class_weight={0: class_weights[1], 1: class_weights[0]},
-                    callbacks=[EarlyStopping(patience=100, restore_best_weights=True)])
+                    callbacks=[EarlyStopping(patience=50, restore_best_weights=True)])
 
 plt.plot(history.history["loss"], label="Training loss")
 plt.plot(history.history["val_loss"], label="Validation loss")

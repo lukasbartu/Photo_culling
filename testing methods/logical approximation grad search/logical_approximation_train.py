@@ -50,8 +50,11 @@ for i, img_list in enumerate(img_lists):
         for q in q_list:
             if q["id"] == s["second_id"]:
                 second_img_score = [q["aesthetic_quality"], q["technical_quality"]]
+        temp = s["feature_similarity_score"]*10
+        if temp > 100:
+            temp = 100
         data_sim[last_id].append(
-            [second_img_score[0], second_img_score[1], s["feature_similarity_score"], s["content_similarity_score"]])
+            [second_img_score[0], second_img_score[1], temp, s["content_similarity_score"]])
     while len(data_sim[last_id]) < max_nbrs * 2:
         data_sim[last_id].append([0, 0, 0, 0])
 
@@ -108,7 +111,7 @@ class_weights_validate = [len(validate_results) / (true_samples * 2), len(valida
 def forward(x, s, w):
     ui = (x[0] * (1 - (w[0] / 100)) + x[1] * (w[0] / 100))
     uj = (s[0] * (1 - (w[0] / 100)) + s[1] * (w[0] / 100))
-    sij = (s[2] * (1 - (w[2] / 100)) + s[3] * (w[2] / 100))
+    sij = (s[2] * (w[2] / 100) + s[3] * (1 - (w[2] / 100)))
 
     p = torch.sigmoid(ui - w[1]) * torch.prod(1 - torch.sigmoid(sij - w[3]) * torch.sigmoid(uj - ui), dim=0)
     return p
@@ -121,19 +124,20 @@ def loss_fun(y, y_pred, c_w):
 
 
 # t_a_r, q_t, s_c_r, s_t
-weights = torch.tensor([5, 55, 95, 10], requires_grad=True, dtype=torch.double)
+weights = torch.tensor([5, 55, 5, 10], requires_grad=True, dtype=torch.double)
 
 loss_BGD = []
 loss_val = []
 
 change = 0
 momentum = 0.9
-lr = torch.asarray([0.001, 0.001, 0.001, 0.001])
+lr = torch.asarray([0.01, 0.01, 0.01, 0.01])
 best_loss = 1e10
-# best_weights = torch.tensor([5.160711678728555, 54.57846529365368, 94.50316336567906, 15.3497764158304])
+# best_weights = torch.tensor([5.06557236396553, 54.81144892570345, 1.629387388,, 16.14053848443734])
+best_weights = torch.tensor([5, 55, 5, 10])
 best_epoch = 0
 eps = 1e-20
-for i in range(3000):
+for i in range(0):
     pred = forward(train_data, train_data_sim, weights)
     loss = loss_fun(train_results, pred, class_weights_train)
     loss_BGD.append(loss.item())
@@ -169,25 +173,25 @@ for i in range(3000):
 print("TRAIN LOSS:", best_loss, best_epoch,
       [best_weights[0].item(), best_weights[1].item(), best_weights[2].item(), best_weights[3].item()])
 
-plt.plot(loss_BGD, label="Train loss")
-plt.plot(loss_val, label="Validation loss")
-plt.axvline(x=best_epoch, color="tab:red", ls="--", label="Best validation loss")
-plt.xlabel('Epoch')
-plt.ylabel('Cost')
-plt.legend()
-plt.title("Batch gradient descent")
-plt.savefig("Log_reg.pdf", format="pdf", bbox_inches="tight")
-plt.show()
-
-x_axis = np.arange(best_epoch-500,best_epoch+501,1)
-plt.plot(x_axis,loss_val[best_epoch-500:best_epoch+501], label="Validation loss", color="tab:orange")
-plt.axvline(x=best_epoch, color="tab:red", ls="--", label="Best validation loss")
-plt.xlabel('Epoch')
-plt.ylabel('Cost')
-plt.legend()
-plt.title("Validation loss close-up")
-plt.savefig("Log_reg_close-up.pdf", format="pdf", bbox_inches="tight")
-plt.show()
+# plt.plot(loss_BGD, label="Train loss")
+# plt.plot(loss_val, label="Validation loss")
+# plt.axvline(x=best_epoch, color="tab:red", ls="--", label="Best validation loss")
+# plt.xlabel('Epoch')
+# plt.ylabel('Cost')
+# plt.legend()
+# plt.title("Batch gradient descent")
+# plt.savefig("Log_reg.pdf", format="pdf", bbox_inches="tight")
+# plt.show()
+#
+# x_axis = np.arange(best_epoch-500,best_epoch+501,1)
+# plt.plot(x_axis,loss_val[best_epoch-500:best_epoch+501], label="Validation loss", color="tab:orange")
+# plt.axvline(x=best_epoch, color="tab:red", ls="--", label="Best validation loss")
+# plt.xlabel('Epoch')
+# plt.ylabel('Cost')
+# plt.legend()
+# plt.title("Validation loss close-up")
+# plt.savefig("Log_reg_close-up.pdf", format="pdf", bbox_inches="tight")
+# plt.show()
 
 
 true_positive = 0
