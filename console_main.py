@@ -24,8 +24,9 @@ import os
 
 
 def main(arg_list):
-    print("This is a console version of this software. This version lacks some features that are included in "
-          "the GUI version. For full functionality use gui_main.py.")
+    q_t, s_t, t_a_ratio, s_c_ratio, size = None, None, None, None, None
+    print(" ***This is a console version of this software. This version lacks some features that are included in "
+          "the GUI version. For full functionality use gui_main.py. ***")
     if not os.path.isdir(arg_list.directory):
         print("Not a directory!")
         return 1
@@ -37,19 +38,27 @@ def main(arg_list):
         return 1
 
     size_based = arg_list.size_based_selection
-    nbrs = max(min(arg_list.number_of_neighbours, 20), 0)
+    nbrs = 20
 
     summary = []
     if (arg_list.select_photos_man or arg_list.select_photos_recommended
-            or arg_list.select_photos_reg or arg_list.select_photos_nn):
+            or arg_list.select_photos_log or arg_list.select_photos_nn):
         if arg_list.select_photos_recommended:
-            q_t, s_t, t_a_ratio, s_c_ratio, size = load_trained()
+            q_t, s_t, t_a_ratio, s_c_ratio = load_trained()
         else:
             q_t = max(min(arg_list.quality_threshold, 100), 0)
             s_t = max(min(arg_list.similarity_threshold, 100), 0)
-            size = max(min(arg_list.size, 100), 0)
             t_a_ratio = max(min(arg_list.t_a_ratio, 100), 0) / 100
             s_c_ratio = max(min(arg_list.s_c_ratio, 100), 0) / 100
+        if size_based:
+            if size is None:
+                print("Please enter size [-size] for size based selection.")
+                return 1
+            else:
+                output_size = int(img_num * (size / 100))
+        else:
+            output_size = 0
+            size = 1
         tic = time.perf_counter()
         print("Calculating quality...", end="   ")
         calculate_qualities(lst=img_list, result_pth=q_path)
@@ -60,22 +69,24 @@ def main(arg_list):
         print("Calculating similarities...", end="   ")
         calculate_similarities(lst=img_list, result_pth=sim_path, num=img_num, nbrs=nbrs, content_pth=c_path)
         print("Similarities calculated")
-        print("Selecting summary of photos")
+        print("Selecting selection of photos")
         if arg_list.select_photos_man or arg_list.select_photos_recommended:
             summary = select_summary(sim_pth=sim_path, q_pth=q_path, size=size, num=img_num, s_t=s_t,
                                      t_a_ratio=t_a_ratio,
                                      size_based=size_based, q_cutoff=q_t, s_c_ratio=s_c_ratio)
 
-        elif arg_list.select_photos_reg:
-            summary = logistic_regression.summary(lst=img_list, s_file=sim_path, q_file=q_path)
-            weights = logistic_regression.load_weights()
+        elif arg_list.select_photos_log:
+            summary = logical_approximation.summary(lst=img_list, s_file=sim_path, q_file=q_path,
+                                                    size_based=size_based, output_size=output_size)
+            weights = logical_approximation.load_weights()
             t_a_ratio = weights[0].item()
         elif arg_list.select_photos_nn:
-            summary = neural_network.summary(lst=img_list, s_file=sim_path, q_file=q_path)
+            summary = neural_network.summary(lst=img_list, s_file=sim_path, q_file=q_path, size_based=size_based,
+                                             output_size=output_size)
             t_a_ratio = 50
 
         summary = remove_folder_name(summary, (os.getcwd() + "/" + arg_list.directory))
-        print("Summary:", summary)
+        print("Selection:", summary)
         toc = time.perf_counter()
         print(f"Process took: {toc - tic:0.2f} s")
 
@@ -84,16 +95,17 @@ def main(arg_list):
             include_metadata_rating(img_list=img_list, q_file=q_path, t_a_ratio=t_a_ratio)
             print("Metadata written")
 
-        if arg_list.save_summary_list:
+        if arg_list.save_selection_list:
             save_list(summary=summary, folder=arg_list.directory, dest_folder=arg_list.directory)
-            print("Summary list saved into:", arg_list.directory)
+            print("Selection list saved into:", arg_list.directory)
 
-        if arg_list.copy_summary:
+        if arg_list.copy_selection:
             copy_images(summary=summary, folder=arg_list.directory, dest_folder="Selected images/")
-            print("Summary copied into:", "Selected images/")
+            print("Selection copied into:", "Selected images/")
 
     else:
-        print("Select one of the modes: [-manual]/[-recommended]/[-auto_reg]/[-auto_nn].")
+        print("Select one of the modes: [-man_cond]/[-auto_log]/[-auto_nn].")
+        return 1
 
 
 if __name__ == '__main__':
@@ -102,23 +114,19 @@ if __name__ == '__main__':
                     "Considers both technical and aesthetic quality as well as similarity between photographs."
                     "To access all the available functions use GUI version of this software.",
         epilog='Lukáš Bartůněk, 2023')
-    parser.add_argument('-manual', '--select_photos_man',
+    parser.add_argument('-man_cond', '--select_photos_man',
                         help='Selection based on provided parameters.', action='store_true')
 
     parser.add_argument('-recommended', '--select_photos_recommended',
                         help='Selection based on recommended parameters.', action='store_true')
 
-    parser.add_argument('-auto_reg', '--select_photos_reg',
-                        help='Selection based on automatic parameters learned by logistic regression.',
+    parser.add_argument('-auto_log', '--select_photos_log',
+                        help='Selection based on automatic parameters learned by logical approximation.',
                         action='store_true')
 
     parser.add_argument('-auto_nn', '--select_photos_nn',
                         help='Selection based on automatic parameters learned by neural network.',
                         action='store_true')
-
-    parser.add_argument('-n', '--number_of_neighbours',
-                        help='How many images before and after to consider for similarity calculation. [0:20]',
-                        type=int, default=5)
 
     parser.add_argument('-t_a_ratio', '--t_a_ratio',
                         help='How much weight (0-100) to give to technical quality. '
@@ -139,23 +147,20 @@ if __name__ == '__main__':
                         type=int, default=10)
 
     parser.add_argument('-q_t', '--quality_threshold',
-                        help='Threshold of quality that will be included in the summary. [0:100]', type=int, default=50)
+                        help='Threshold of quality that will be included in the selection. [0:100]', type=int, default=50)
 
     parser.add_argument("-metadata", "--metadata", action="store_true",
                         help="Write information about quality of images into metadata.")
 
-    parser.add_argument('-save', '--save_summary_list',
-                        help='Saves summary as a list in .txt.', action='store_true')
+    parser.add_argument('-save', '--save_selection_list',
+                        help='Saves the selection as a list in .txt.', action='store_true')
 
-    parser.add_argument('-copy', '--copy_summary',
+    parser.add_argument('-copy', '--copy_selection',
                         help='Copies selected images into new folder.', action='store_true')
 
     parser.add_argument('-size_based', '--size_based_selection',
                         help='Select based on output size.', action='store_true')
-
-    parser.add_argument('-quality_based', '--quality_based_selection',
-                        help='Select based on image quality.', dest='size_based_selection', action='store_false')
-    parser.set_defaults(size_based_selection=True)
+    parser.set_defaults(size_based_selection=False)
 
     parser.add_argument('-dir', '--directory',
                         help='Directory containing images.', required=True)

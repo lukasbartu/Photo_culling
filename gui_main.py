@@ -561,7 +561,7 @@ try:
                 q_t, s_t, t_a_ratio, s_c_ratio = generate_preset_values(qua_preset, sim_preset, tar_preset,
                                                                         scr_preset, q_path, sim_path)
             output_size = int(img_num * (size / 100))
-            if size == 0:
+            if size == 0 and size_based:
                 summary = []
             else:
                 if method_mode == 2:

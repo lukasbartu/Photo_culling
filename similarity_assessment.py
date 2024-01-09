@@ -58,7 +58,10 @@ def calculate_matches(des1, des2):
 
 
 def calculate_score(matches, keypoint1, keypoint2):
-    return 100 * (matches / min(keypoint1, keypoint2))
+    score = 1000 * (matches / min(keypoint1, keypoint2))
+    if score > 100:
+        score = 100
+    return score
 
 
 def calculate_similarities(lst, result_pth, num, nbrs, content_pth, recalc=False):
