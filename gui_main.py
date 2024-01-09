@@ -587,7 +587,7 @@ try:
                 print("Metadata written")
                 window.Refresh() if window else None
 
-            if size != 0:
+            if len(summary) != 0:
                 summary = remove_folder_name(summary, folder)
                 highlight = summary[0]
                 window['-TOUT-'].update(highlight)
